@@ -1,10 +1,10 @@
-import Auth from "@/components/Auth";
+import LoginScreen from "@/screens/login";
 import { ScrollView } from "react-native";
 
-export default function LoginScreen() {
+export default function Login() {
   return (
     <ScrollView>
-      <Auth />
+      <LoginScreen />
     </ScrollView>
   );
 }

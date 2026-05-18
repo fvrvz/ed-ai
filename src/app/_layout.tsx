@@ -3,16 +3,20 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Stack } from "expo-router";
 
 function RootNavigator() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isLoggedIn}>
-        <Stack.Screen name="(tabs)" />
+      <Stack.Protected guard={isLoggedIn && isAdmin}>
+        <Stack.Screen name="(admin)" />
+      </Stack.Protected>
+      <Stack.Protected guard={isLoggedIn && !isAdmin}>
+        <Stack.Screen name="(member)" />
       </Stack.Protected>
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="register" />
       </Stack.Protected>
-      {/* <Stack.Screen name="+not-found" /> */}
     </Stack>
   );
 }
