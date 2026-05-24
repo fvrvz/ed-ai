@@ -1,4 +1,4 @@
-import { JwtPayload, Session, User } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
 export type UserRole = "admin" | "member";
 
@@ -17,9 +17,8 @@ export interface Profile {
 export interface AuthContextValue {
   session: Session | null;
   user: User | null;
-  claims: JwtPayload | null;
   profile: Profile | null;
-  loading: boolean;
+  authResolved: boolean;
   isLoggedIn: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (params: {

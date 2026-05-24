@@ -3,7 +3,7 @@ import { SplashScreen } from "expo-router";
 import { useEffect } from "react";
 
 export function SplashScreenController() {
-  const { loading } = useAuth();
+  const { authResolved } = useAuth();
 
   useEffect(() => {
     async function preventAutoHide() {
@@ -19,7 +19,7 @@ export function SplashScreenController() {
 
   useEffect(() => {
     async function hideSplash() {
-      if (!loading) {
+      if (authResolved) {
         try {
           await SplashScreen.hideAsync();
         } catch (error) {
@@ -29,7 +29,7 @@ export function SplashScreenController() {
     }
 
     hideSplash();
-  }, [loading]);
+  }, [authResolved]);
 
   return null;
 }

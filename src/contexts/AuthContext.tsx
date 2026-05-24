@@ -1,11 +1,6 @@
 import { supabase } from "@/utils/supabase";
 
-import {
-  AuthChangeEvent,
-  JwtPayload,
-  Session,
-  User,
-} from "@supabase/supabase-js";
+import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 
 import React, {
   createContext,
@@ -34,9 +29,8 @@ export const useAuth = (): AuthContextValue => {
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [claims, setClaims] = useState<JwtPayload | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authResolved, setAuthResolved] = useState(false);
 
   /**
    * Fetch user profile
@@ -72,22 +66,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
    */
   const loadAuth = useCallback(async () => {
     try {
-      setLoading(true);
-
-      const [sessionResponse, claimsResponse] = await Promise.all([
-        supabase.auth.getSession(),
-        supabase.auth.getClaims(),
-      ]);
-
+      const sessionResponse = await supabase.auth.getSession();
       const currentSession = sessionResponse.data.session;
 
-      const currentClaims = claimsResponse.data?.claims ?? null;
-
       setSession(currentSession);
-
       setUser(currentSession?.user ?? null);
-
-      setClaims(currentClaims);
 
       if (currentSession?.user?.id) {
         await fetchProfile(currentSession.user.id);
@@ -96,8 +79,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     } catch (error) {
       console.error("Error loading auth:", error);
+      setProfile(null);
     } finally {
-      setLoading(false);
+      setAuthResolved(true);
     }
   }, [fetchProfile]);
 
@@ -119,20 +103,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
         console.log("Auth event:", event);
 
         setSession(session);
-
         setUser(session?.user ?? null);
 
         if (!session?.user) {
-          setClaims(null);
           setProfile(null);
+          setAuthResolved(true);
           return;
         }
 
-        const { data } = await supabase.auth.getClaims();
-
-        setClaims(data?.claims ?? null);
-
-        await fetchProfile(session.user.id);
+        try {
+          await fetchProfile(session.user.id);
+        } catch (error) {
+          console.error("Error fetching profile on auth state change:", error);
+          setProfile(null);
+        } finally {
+          setAuthResolved(true);
+        }
       },
     );
 
@@ -206,7 +192,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     setSession(null);
     setUser(null);
-    setClaims(null);
     setProfile(null);
   }, []);
 
@@ -214,9 +199,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       session,
       user,
-      claims,
       profile,
-      loading,
+      authResolved,
       isLoggedIn: !!session,
       signInWithEmail,
       signUpWithEmail,
@@ -228,9 +212,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [
       session,
       user,
-      claims,
       profile,
-      loading,
+      authResolved,
       signInWithEmail,
       signUpWithEmail,
       signOut,
