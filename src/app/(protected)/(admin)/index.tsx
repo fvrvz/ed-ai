@@ -6,7 +6,7 @@ export default function HomeScreen() {
   return (
     <ScrollView style={globalStyles.container}>
       <Text>Admin Home Screen</Text>
-      <Link href="/(settings)">Go to Settings</Link>
+      <Link href="/(protected)/(settings)">Go to Settings</Link>
     </ScrollView>
   );
 }

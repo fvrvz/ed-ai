@@ -9,7 +9,7 @@ export default function AnalyticsScreen() {
   return (
     <ScrollView style={globalStyles.container}>
       <Text>Analytics Screen</Text>
-      <Link href="/(settings)">Go to Settings</Link>
+      <Link href="/(protected)/(settings)">Go to Settings</Link>
       {profile && <Text>{JSON.stringify(profile)}</Text>}
     </ScrollView>
   );

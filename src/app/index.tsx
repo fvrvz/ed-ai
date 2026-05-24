@@ -1,10 +1,5 @@
-import LoginScreen from "@/screens/login";
-import { ScrollView } from "react-native";
+import { Redirect } from "expo-router";
 
-export default function Login() {
-  return (
-    <ScrollView>
-      <LoginScreen />
-    </ScrollView>
-  );
+export default function RootIndex() {
+  return <Redirect href="/(public)" />;
 }

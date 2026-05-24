@@ -9,7 +9,7 @@ export default function HomeScreen() {
   return (
     <ScrollView style={globalStyles.container}>
       <Text>Home Screen</Text>
-      <Link href="/(settings)">Go to Settings</Link>
+      <Link href="/(protected)/(settings)">Go to Settings</Link>
       {profile && <Text>{JSON.stringify(profile)}</Text>}
       <Button title="Sign out" onPress={signOut} />
     </ScrollView>
