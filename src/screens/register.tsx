@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-
+import { Image } from "expo-image";
+import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -75,6 +75,15 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
+          <Image
+            source={require("@/assets/expo.icon/Assets/vector/default-monochrome.svg")}
+            style={{
+              width: 100,
+              height: 100,
+              alignSelf: "center",
+              marginBottom: 24,
+            }}
+          />
           <View style={styles.header}>
             <Text style={styles.title}>Create account</Text>
 
