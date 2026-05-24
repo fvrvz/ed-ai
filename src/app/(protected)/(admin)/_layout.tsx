@@ -26,11 +26,11 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="projects"
+        name="courses"
         options={{
-          title: "Projects",
+          title: "Courses",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="briefcase" size={size} color={color} />
+            <Ionicons name="book" size={size} color={color} />
           ),
         }}
       />
