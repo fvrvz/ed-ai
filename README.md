@@ -1,109 +1,118 @@
 # EdAI
 
-EdAI is an AI-powered, RAG-driven learning management platform. It allows administrators to create custom courses, manage internal knowledge bases, and use AI to identify and fill knowledge gaps. Members receive personalized AI chat assistance grounded directly in the documents uploaded by their administrators.
+EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It allows administrators to isolate corporate clients, structure courses/projects, manage granular document knowledge bases, and use AI to fill knowledge gaps. Members receive contextual AI chat assistance grounded directly in the documents assigned to their specific active course.
+
+---
 
 ## 🚀 Tech Stack & Prerequisites
 
 - **Frontend Framework:** Expo 55 (React Native)
-- **Database & Vector Engine:** Supabase (PostgreSQL with `pgvector`)
+- **Database & Core Workspace Backend:** Supabase (PostgreSQL with `pgvector`)
 - **Storage Framework:** Cloudflare R2 (S3-Compatible Object Storage) & Local Device Cache
 - **LLM Provider:** Grok AI (xAI API Free-Tier Models)
 - **Runtime Environment:** Node.js v24.15.0
 - **Package Manager:** npm v11.12.1
 
+---
+
 ## 🏗️ System Architecture
 
-| Component           | Technology             | Primary Responsibility / Action                                                              |
-| :------------------ | :--------------------- | :------------------------------------------------------------------------------------------- |
-| **Frontend Client** | Expo 55 (React Native) | UI presentation, handling file uploads, user prompt submissions, and local device caching.   |
-| **Object Storage**  | Cloudflare R2          | Hosts raw training documents (PDFs, text files) uploaded by admins via an S3-compatible API. |
-| **Vector Engine**   | Supabase (`pgvector`)  | Stores text chunks alongside numerical vector embeddings; runs cosine-similarity searches.   |
-| **LLM Inference**   | Grok AI (xAI API)      | Receives context-rich prompts to generate accurate, grounded natural language responses.     |
+| Component               | Technology              | Primary Responsibility / Action                                                               |
+| :---------------------- | :---------------------- | :-------------------------------------------------------------------------------------------- |
+| **Frontend Client**     | Expo 55 (React Native)  | UI presentation, file uploading pipelines, message history tracking, local keyless requests.  |
+| **Object Storage**      | Cloudflare R2           | Hosts raw learning items (PDFs, text files) grouped inside client namespaces securely.        |
+| **Vector Engine**       | Supabase (`pgvector`)   | Stores chunk strings and coordinates; runs relational index filtered RPC similarity matching. |
+| **LLM Inference Proxy** | Supabase Edge Functions | Vault isolation proxy executing serverless routines to mask client master credentials.        |
+| **LLM Inference**       | Grok AI (xAI API)       | Receives context-rich prompts bound by course documentation constraints to generate replies.  |
 
-### RAG Operations Pipeline
+### Multi-Tenant RAG Operations Pipeline
 
-1. **Document Storage:** Administrators upload training manuals, textbooks, or policy sheets. Files are streamed directly to a secure **Cloudflare R2** bucket, saving the reference URI.
-2. **Local Caching:** Active learning content and session metadata are mirrored to the client device's local storage for instant offline structural access.
-3. **Vector Vectorization:** Text is extracted from documents, divided into optimal semantic chunks, converted into vector representations, and recorded into **Supabase** via the `pgvector` engine.
-4. **Context Retrieval:** When a member posts a question, the text is vectorized. A cosine-similarity query finds the relevant matching documentation pieces inside Supabase.
-5. **Grok Generation:** The system passes the context chunks along with the user query to **Grok AI**, forcing it to generate a response anchored strictly within the verified organizational knowledge base.
+1. **Document Storage:** Admins link documentation items to an explicit course. The binary payload streams up to **Cloudflare R2** via the serverless proxy. The resulting URI reference is recorded in Supabase.
+2. **Offline Memory Mirroring:** Core course metadata grids and thread schemas cache directly onto local storage arrays for near-instant client-side loading configurations.
+3. **Isolated Vectorization:** Documents are divided into granular text pieces. The `generate-embeddings` edge worker utilizes the client's scoped service master key to bypass RLS barriers and write the rows.
+4. **Targeted Context Retrieval:** When a student posts a question within a course view, the message history and active `course_id` pass to the `grok-chat` edge function. An optimized Database Remote Procedure Call (`match_course_chunks`) runs an HNSW-indexed cosine similarity scan isolated **strictly** to that specific course.
+5. **Grok Grounded Generation:** Matched context strings merge into a strict system prompt instruction block sent to **Grok AI**, forcing the inference model to formulate answers anchored solely to the corporate course documentation.
+
+---
 
 ## 🌟 Core Features
 
 ### 👑 Admin Capabilities
 
-- **Course & Project Management:** Create, structure, and organize courses or projects.
-- **RAG Knowledge Base:** Upload training documents, manuals, and assets directly to Cloudflare R2 to seed the AI context.
-- **AI & Manual Quiz Generation:** Instantly spin up assessments using Grok AI models or build them manually.
-- **Analytics Dashboard:** Track system usage, user performance, and course completion rates.
-- **User Management:** Provision users, manage permissions, and assign content to users or custom user groups.
-- **Knowledge Gap Resolution:** Review user-generated threads and unresolved AI queries to expand the documentation.
+- **Multi-Tenant Client Provisioning:** Maintain independent client profiles and fully isolated encryption setting matrices.
+- **Course & Project Management:** Create, structure, and assign custom training courses.
+- **Targeted Knowledge Base Building:** Upload files straight to Cloudflare R2 mapped explicitly down to individual course modules.
+- **AI & Manual Quiz Generation:** Build assessments manually or prompt Grok models to output custom validation questions.
+- **Analytics Dashboard:** Track platform engagement, progress loops, and failure percentages.
+- **Knowledge Gap Resolution:** Address unresolved support threads and failed AI query logs by expanding course documentation blocks.
 
 ### 👥 Member Capabilities
 
-- **Assigned Portal:** View, access, and progress through assigned courses and projects.
-- **RAG-Powered AI Chat:** Query the AI assistant with conversational questions, getting answers strictly grounded in the project’s knowledge base.
-- **Attempt Quizzes:** Take assessments to prove competency and pinpoint personal skill areas.
-- **Thread Creation:** Manually open support threads or automatically flag a failed/incomplete AI response when information is missing from the knowledge base.
+- **Assigned Course Portal:** Access modules, view completion paths, and complete active training programs.
+- **Course-Locked AI Chat:** Query a personal learning assistant whose knowledge pool is locked into that active course.
+- **Attempt Quizzes:** Complete structured assessments to log completion credentials.
+- **Thread Creation:** Open support tickets manually or flag low-confidence AI replies when crucial training data is missing.
 
-## 🛠️ Supabase Database Migrations
+---
 
-We use the Supabase CLI to manage database schemas, Vector embeddings, functions, and Row-Level Security (RLS) policies locally. This keeps our environment reproducible and safely versioned.
+## 🛠️ Supabase Workspace & Database Migrations
+
+We use the Supabase CLI to manage structural databases, configuration indexes, serverless functions, and Row-Level Security (RLS) policies locally to ensure version-controlled reproducibility.
 
 ### 1. Initial Setup
 
-Install the CLI dependencies locally and initialize the configuration directory:
+Install dependencies and initialize the workspace configuration folders:
 
 ```bash
 # Install Supabase CLI as a dev dependency
 npm install supabase --save-dev
 
-# Initialize the local supabase configuration folder
+# Initialize the local supabase environment folder
 npx supabase init
 ```
 
-### 2. Link to Live Project
+### 2. Link to Remote Instance
 
-Connect your local workspace to the hosted Supabase cloud infrastructure. You will need your project's reference ID and your database password.
+Connect your local development instance to your live cloud project using your Project Reference ID:
 
 ```bash
 npx supabase link --project-ref <your-project-ref-id>
 ```
 
-### 3. Setup pgvector (First Migration)
+### 3. Create Database Schemas (First Migrations)
 
-Before creating vector tables, your database needs the vector extension enabled. Generate a migration file:
+Generate separate timestamped migration files to establish your relational matrices and performance indexing parameters:
 
 ```bash
+# Migration A: Enable vector capabilities
 npx supabase migration new enable_pgvector
+
+# Migration B: Setup multi-tenant clients and configuration secrets vault
+npx supabase migration new setup_multi_tenant_vault
+
+# Migration C: Build course vector tracking schemas and HNSW optimizations
+npx supabase migration new add_course_document_vectors
 ```
 
-Open the generated SQL file and add:
+_Open the resulting files inside `./supabase/migrations/` and apply the targeted structural PostgreSQL scripts._
 
-```sql
--- Enable the pgvector extension to work with embedding vectors
-CREATE EXTENSION IF NOT EXISTS vector;
-```
+### 4. Deploy Serverless Edge Functions
 
-### 4. Pull Remote Changes (Backup)
-
-If any changes were made directly via the online Supabase Dashboard UI, pull them down to generate your baseline local schema tracking file:
+Our isolated edge functions operate with scoped `deno.json` import maps. To bundle dependencies and push your entire suite live, run:
 
 ```bash
-npx supabase db pull
+# Deploy all functions simultaneously
+npx supabase functions deploy
+
+# Or target individual workers to isolate compilation feedback
+npx supabase functions deploy grok-chat
+npx supabase functions deploy r2-upload
+npx supabase functions deploy generate-embeddings
 ```
 
-### 5. Create a New Migration
+### 5. Push Local Schemas to Production
 
-Whenever you need to create new tables, add vector extensions, or modify RLS policies, generate a fresh timestamped SQL migration file:
-
-```bash
-npx supabase migration new <migration_name_here>
-```
-
-### 6. Apply Changes to Remote Database
-
-Deploy and execute your local migration files directly onto your live production cloud database:
+Execute your local migration sequences against your hosted live instance:
 
 ```bash
 npx supabase db push
@@ -120,112 +129,24 @@ npx supabase db push
     cd EdAI
     ```
 
-2.  **Install dependencies:**
+2.  **Install client-side dependencies:**
 
     ```bash
     npm install
     ```
 
-3.  **Environment Variables:**
-    Create a `.env` file in the root directory and add your keys:
+3.  **Environment Variables Setup:**
+    Create a `.env` file in your root workspace folder and configure your entry keys:
 
     ```env
-    # Supabase Setup
-    EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-    # Grok AI Configuration
-    EXPO_PUBLIC_XAI_API_KEY=your_grok_ai_api_key
-
-    # Cloudflare R2 Credentials
-    EXPO_PUBLIC_R2_ACCOUNT_ID=your_cloudflare_account_id
-    EXPO_PUBLIC_R2_ACCESS_KEY_ID=your_r2_access_key
-    EXPO_PUBLIC_R2_SECRET_ACCESS_KEY=your_r2_secret_key
-    EXPO_PUBLIC_R2_BUCKET_NAME=your_bucket_name
+    # Public Supabase Client Access Configuration
+    EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anonymous_public_key
     ```
+
+    _(Note: Master keys for Grok AI, Cloudflare R2 credentials, and Supabase service roles are intentionally omitted from client env setups. They reside encrypted inside the database vault to guarantee total app safety)._
 
 4.  **Start the Expo application:**
     ```bash
     npx expo start
-    ```
-
-## 🛠️ Supabase Database Migrations
-
-We use the Supabase CLI to manage database schemas, Vector embeddings, functions, and Row-Level Security (RLS) policies locally. This keeps our environment reproducible and safely versioned.
-
-### 1. Initial Setup
-
-Install the CLI dependencies locally and initialize the configuration directory:
-
-```bash
-# Install Supabase CLI as a dev dependency
-npm install supabase --save-dev
-
-# Initialize the local supabase configuration folder
-npx supabase init
-```
-
-### 2. Link to Live Project
-
-Connect your local workspace to the hosted Supabase cloud infrastructure. You will need your project's reference ID and your database password.
-
-```bash
-npx supabase link --project-ref <your-project-ref-id>
-```
-
-### 3. Create a New Migration
-
-Whenever you need to create new tables, functions, or RLS policies, generate a fresh timestamped SQL migration file:
-
-```bash
-npx supabase migration new <migration_name_here>
-```
-
-- Open the newly generated file inside `./supabase/migrations/`.
-- Write or paste your custom PostgreSQL/SQL scripts inside it.
-
-### 4. Apply Changes to Remote Database
-
-Deploy and execute your local migration files directly to your live production cloud database:
-
-```bash
-npx supabase db push
-```
-
-## 📦 Local Installation & Getting Started
-
-1.  **Clone the repository:**
-
-    ```bash
-    git clone https://github.com
-    cd EdAI
-    ```
-
-2.  **Install dependencies:**
-
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Variables:**
-    Create a `.env` file in the root directory and add your keys:
-
-    ```env
-    # Supabase Setup
-    EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-    # Grok AI Configuration
-    EXPO_PUBLIC_XAI_API_KEY=your_grok_ai_api_key
-
-    # Cloudflare R2 Credentials
-    EXPO_PUBLIC_R2_ACCOUNT_ID=your_cloudflare_account_id
-    EXPO_PUBLIC_R2_ACCESS_KEY_ID=your_r2_access_key
-    EXPO_PUBLIC_R2_SECRET_ACCESS_KEY=your_r2_secret_key
-    EXPO_PUBLIC_R2_BUCKET_NAME=your_bucket_name
-    ```
-
-4.  **Start the Expo application:**
-    ```bash
-    npm start
     ```
