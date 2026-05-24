@@ -38,8 +38,8 @@ export default function Layout() {
           options={{ title: "Users", headerBackTitle: "" }}
         />
         <Stack.Screen
-          name="api-keys"
-          options={{ title: "API Keys", headerBackTitle: "" }}
+          name="secrets"
+          options={{ title: "Secrets", headerBackTitle: "" }}
         />
       </Stack.Protected>
     </Stack>

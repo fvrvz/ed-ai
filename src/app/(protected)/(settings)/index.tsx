@@ -20,10 +20,10 @@ export default function SettingsScreen() {
             Users
           </Link>
           <Link
-            href="/(protected)/(settings)/api-keys"
+            href="/(protected)/(settings)/secrets"
             style={globalStyles.link}
           >
-            API Keys
+            Secrets
           </Link>
         </>
       )}
