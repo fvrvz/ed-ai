@@ -32,6 +32,16 @@ export default function Layout() {
         name="profile"
         options={{ title: "Profile", headerBackTitle: "" }}
       />
+      <Stack.Protected guard={isAdmin}>
+        <Stack.Screen
+          name="users"
+          options={{ title: "Users", headerBackTitle: "" }}
+        />
+        <Stack.Screen
+          name="api-keys"
+          options={{ title: "API Keys", headerBackTitle: "" }}
+        />
+      </Stack.Protected>
     </Stack>
   );
 }

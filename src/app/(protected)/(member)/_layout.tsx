@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
@@ -6,7 +7,7 @@ export default function RootLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        header: () => <Header />,
         tabBarStyle: {
           backgroundColor: colors.background,
           borderTopColor: colors.primary,
