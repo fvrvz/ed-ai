@@ -1,10 +1,10 @@
 import { globalStyles } from "@/styles/global";
 import { ScrollView, Text } from "react-native";
 
-export default function ProjectsScreen() {
+export default function CoursesScreen() {
   return (
     <ScrollView style={globalStyles.container}>
-      <Text>Projects</Text>
+      <Text>Courses</Text>
     </ScrollView>
   );
 }

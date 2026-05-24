@@ -2,8 +2,6 @@
 
 EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It allows administrators to isolate corporate clients, structure courses/projects, manage granular document knowledge bases, and use AI to fill knowledge gaps. Members receive contextual AI chat assistance grounded directly in the documents assigned to their specific active course.
 
----
-
 ## 🚀 Tech Stack & Prerequisites
 
 - **Frontend Framework:** Expo 55 (React Native)
@@ -12,8 +10,6 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 - **LLM Provider:** Grok AI (xAI API Free-Tier Models)
 - **Runtime Environment:** Node.js v24.15.0
 - **Package Manager:** npm v11.12.1
-
----
 
 ## 🏗️ System Architecture
 
@@ -33,8 +29,6 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 4. **Targeted Context Retrieval:** When a student posts a question within a course view, the message history and active `course_id` pass to the `grok-chat` edge function. An optimized Database Remote Procedure Call (`match_course_chunks`) runs an HNSW-indexed cosine similarity scan isolated **strictly** to that specific course.
 5. **Grok Grounded Generation:** Matched context strings merge into a strict system prompt instruction block sent to **Grok AI**, forcing the inference model to formulate answers anchored solely to the corporate course documentation.
 
----
-
 ## 🌟 Core Features
 
 ### 👑 Admin Capabilities
@@ -52,8 +46,6 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 - **Course-Locked AI Chat:** Query a personal learning assistant whose knowledge pool is locked into that active course.
 - **Attempt Quizzes:** Complete structured assessments to log completion credentials.
 - **Thread Creation:** Open support tickets manually or flag low-confidence AI replies when crucial training data is missing.
-
----
 
 ## 🛠️ Supabase Workspace & Database Migrations
 
@@ -118,15 +110,13 @@ Execute your local migration sequences against your hosted live instance:
 npx supabase db push
 ```
 
----
-
 ## 📦 Local Installation & Getting Started
 
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com
-    cd EdAI
+    git clone https://github.com/fvrvz/ed-ai
+    cd ed-ai
     ```
 
 2.  **Install client-side dependencies:**
@@ -148,5 +138,5 @@ npx supabase db push
 
 4.  **Start the Expo application:**
     ```bash
-    npx expo start
+    expo start
     ```
