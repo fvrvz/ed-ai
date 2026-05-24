@@ -31,5 +31,4 @@ export interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   isAdmin: boolean;
-  fullName: string | null;
 }

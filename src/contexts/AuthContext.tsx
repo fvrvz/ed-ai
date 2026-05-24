@@ -205,7 +205,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setProfile(null);
   }, []);
 
-  const value = useMemo(
+  const value = useMemo<AuthContextValue>(
     () => ({
       session,
       user,
@@ -217,7 +217,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signOut,
       refreshProfile,
       isAdmin: profile?.role === "admin",
-      fullName: profile ? `${profile.first_name} ${profile.last_name}` : null,
     }),
     [
       session,
