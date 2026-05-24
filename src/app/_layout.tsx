@@ -1,7 +1,12 @@
 import { SplashScreenController } from "@/components/SplashScreenController";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, useColorScheme, View } from "react-native";
 
 function RootNavigator() {
   const { isLoggedIn, authResolved } = useAuth();
@@ -27,10 +32,14 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
+
   return (
-    <AuthProvider>
-      <SplashScreenController />
-      <RootNavigator />
-    </AuthProvider>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <AuthProvider>
+        <SplashScreenController />
+        <RootNavigator />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
