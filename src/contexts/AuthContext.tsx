@@ -2,7 +2,7 @@ import { supabase } from "@/utils/supabase";
 
 import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 
-import React, {
+import {
   createContext,
   PropsWithChildren,
   useCallback,

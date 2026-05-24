@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 export default function ProtectedLayout() {
-  const { isLoggedIn, authResolved } = useAuth();
+  const { isLoggedIn, authResolved, isAdmin } = useAuth();
 
   if (!authResolved) {
     return (
@@ -15,11 +15,11 @@ export default function ProtectedLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isLoggedIn}>
+      <Stack.Protected guard={isAdmin}>
         <Stack.Screen name="(admin)" />
-        <Stack.Screen name="(member)" />
-        <Stack.Screen name="(settings)" />
       </Stack.Protected>
+      <Stack.Screen name="(member)" />
+      <Stack.Screen name="(settings)" />
     </Stack>
   );
 }

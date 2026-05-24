@@ -13,12 +13,14 @@ export default function PublicLayout() {
     );
   }
 
+  //   if (isLoggedIn) {
+  //     return <Redirect href="/(protected)" />;
+  //   }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!isLoggedIn}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="register" />
-      </Stack.Protected>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="register" />
     </Stack>
   );
 }

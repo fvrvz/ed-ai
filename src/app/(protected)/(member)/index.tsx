@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { globalStyles } from "@/styles/global";
 import { Link } from "expo-router";
-import { Button, ScrollView, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 
 export default function HomeScreen() {
   const { profile, signOut } = useAuth();
@@ -11,7 +11,6 @@ export default function HomeScreen() {
       <Text>Home Screen</Text>
       <Link href="/(protected)/(settings)">Go to Settings</Link>
       {profile && <Text>{JSON.stringify(profile)}</Text>}
-      <Button title="Sign out" onPress={signOut} />
     </ScrollView>
   );
 }
