@@ -2,7 +2,7 @@ import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
-export default function RootLayout() {
+export default function AdminLayout() {
   return (
     <Tabs
       screenOptions={{
