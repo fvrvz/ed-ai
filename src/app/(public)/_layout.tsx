@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
 export default function PublicLayout() {
-  const { isLoggedIn, authResolved } = useAuth();
+  const { authResolved } = useAuth();
 
   if (!authResolved) {
     return (
@@ -12,10 +12,6 @@ export default function PublicLayout() {
       </View>
     );
   }
-
-  //   if (isLoggedIn) {
-  //     return <Redirect href="/(protected)" />;
-  //   }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

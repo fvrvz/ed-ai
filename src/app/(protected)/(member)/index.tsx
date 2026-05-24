@@ -4,7 +4,7 @@ import { Link } from "expo-router";
 import { ScrollView, Text } from "react-native";
 
 export default function HomeScreen() {
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
 
   return (
     <ScrollView style={globalStyles.container}>

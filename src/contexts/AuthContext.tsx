@@ -65,6 +65,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
    * Load initial auth state
    */
   const loadAuth = useCallback(async () => {
+    setAuthResolved(false); // Start as unresolved
     try {
       const sessionResponse = await supabase.auth.getSession();
       const currentSession = sessionResponse.data.session;
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user?.id) {
+        // Wait for profile before setting resolved to true
         await fetchProfile(currentSession.user.id);
       } else {
         setProfile(null);
@@ -81,7 +83,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       console.error("Error loading auth:", error);
       setProfile(null);
     } finally {
-      setAuthResolved(true);
+      setAuthResolved(true); // Triggers layout evaluation cleanly
     }
   }, [fetchProfile]);
 
@@ -102,9 +104,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       async (event: AuthChangeEvent, session) => {
         console.log("Auth event:", event);
 
+        // 1. If logging in or token refreshed, block routing by resetting authResolved
+        if (session?.user) {
+          setAuthResolved(false);
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Handle logout
         if (!session?.user) {
           setProfile(null);
           setAuthResolved(true);
@@ -112,11 +120,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
         try {
+          // 2. Wait for the profile to download completely
           await fetchProfile(session.user.id);
         } catch (error) {
           console.error("Error fetching profile on auth state change:", error);
           setProfile(null);
         } finally {
+          // 3. Only unlock routing once BOTH session AND profile data are in memory
           setAuthResolved(true);
         }
       },
