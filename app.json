@@ -14,7 +14,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/expo.icon/Assets/default.png",
-        "backgroundImage": "./assets/expo.icon/Assets/cover.png",
+        "backgroundImage": "./assets/expo.icon/Assets/default.png",
         "monochromeImage": "./assets/expo.icon/Assets/default.png"
       },
       "predictiveBackGestureEnabled": false
@@ -33,7 +33,12 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
