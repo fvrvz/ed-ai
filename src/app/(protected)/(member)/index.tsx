@@ -5,7 +5,7 @@ import { globalStyles } from "@/styles/global";
 import { getAssignmentsByUserId } from "@/utils/db";
 import { getFullName } from "@/utils/profile.helper";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { ScrollView, Text } from "react-native";
 
 export default function HomeScreen() {
   const { profile } = useAuth();
@@ -30,10 +30,14 @@ export default function HomeScreen() {
   }, [profile]);
 
   return (
-    <View style={globalStyles.container}>
+    <ScrollView style={globalStyles.container}>
       <Title>Welcome, {getFullName(profile) || "User"}!</Title>
 
-      <KPICard title="Total Courses" value={totalAssignments} />
-    </View>
+      {loading ? (
+        <Text>Loading...</Text>
+      ) : (
+        <KPICard title="Total Courses" value={totalAssignments} />
+      )}
+    </ScrollView>
   );
 }
