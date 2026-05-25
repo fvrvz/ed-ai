@@ -2,10 +2,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Stack } from "expo-router";
 
 export default function ProtectedLayout() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isSuperAdmin}>
+        <Stack.Screen name="(super-admin)" />
+      </Stack.Protected>
       <Stack.Protected guard={isAdmin}>
         <Stack.Screen name="(admin)" />
       </Stack.Protected>

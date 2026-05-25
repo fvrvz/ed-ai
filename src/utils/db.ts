@@ -1,5 +1,6 @@
 import { Profile, UserRole } from "@/types/auth";
 import { Base } from "@/types/base";
+import { Client } from "@/types/client";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
 import { Document } from "@/types/document";
 import { supabase } from "./supabase";
@@ -42,6 +43,67 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     if (error) {
         throw new Error(`Error fetching course with ID ${courseId}: ${error.message}`);
     }
+    return data;
+}
+
+export async function getClients(filterOptions?: FilterOptions<Client>): Promise<Client[]> {
+    let query = supabase.from("clients").select("*");
+
+    if (filterOptions?.isActive !== undefined) {
+        query = query.eq("is_active", filterOptions.isActive);
+    }
+
+    if (filterOptions?.sortBy) {
+        query = query.order(filterOptions.sortBy, { ascending: filterOptions.sortOrder === "asc" });
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        throw new Error(`Error fetching clients: ${error.message}`);
+    }
+    return data;
+}
+
+export async function getClientById(clientId: string): Promise<Client | null> {
+    const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", clientId)
+        .single();
+
+    if (error) {
+        throw new Error(`Error fetching client with ID ${clientId}: ${error.message}`);
+    }
+
+    return data;
+}
+
+export async function createClient(client: Omit<Client, keyof Base>): Promise<Client> {
+    const { data, error } = await supabase
+        .from("clients")
+        .insert(client)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error creating client: ${error.message}`);
+    }
+
+    return data;
+}
+
+export async function updateClient(clientId: string, updates: Partial<Omit<Client, keyof Base>>): Promise<Client> {
+    const { data, error } = await supabase
+        .from("clients")
+        .update(updates)
+        .eq("id", clientId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error updating client with ID ${clientId}: ${error.message}`);
+    }
+
     return data;
 }
 
