@@ -1,7 +1,7 @@
 import { Session, User } from "@supabase/supabase-js";
 import { Base } from "./base";
 
-export type UserRole = "admin" | "member";
+export type UserRole = "admin" | "member" | "super_admin";
 
 export interface Profile extends Base {
   email: string;
@@ -29,4 +29,5 @@ export interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }

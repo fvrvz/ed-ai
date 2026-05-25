@@ -150,8 +150,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setProfile(null);
   }, []);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
+  const value = useMemo(
+    (): AuthContextValue => ({
       session,
       user,
       profile,
@@ -162,6 +162,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signOut,
       refreshProfile,
       isAdmin: profile?.role === "admin",
+      isSuperAdmin: profile?.role === "super_admin",
     }),
     [
       session,
