@@ -1,17 +1,15 @@
 import { Session, User } from "@supabase/supabase-js";
+import { Base } from "./base";
 
 export type UserRole = "admin" | "member";
 
-export interface Profile {
-  id: string;
+export interface Profile extends Base {
   email: string;
   first_name: string;
   last_name: string;
   role: UserRole;
   is_active: boolean;
   phone: string | null;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface AuthContextValue {
