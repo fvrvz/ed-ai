@@ -4,7 +4,9 @@ import { Link } from "expo-router";
 import { Button, ScrollView, View } from "react-native";
 
 export default function SettingsScreen() {
-  const { signOut, isAdmin } = useAuth();
+  const { signOut, isAdmin, isSuperAdmin } = useAuth();
+  const canManageSettings = isAdmin || isSuperAdmin;
+
   return (
     <ScrollView
       contentContainerStyle={{
@@ -14,7 +16,7 @@ export default function SettingsScreen() {
       <Link href="/(protected)/(settings)/profile" style={globalStyles.link}>
         Profile
       </Link>
-      {isAdmin && (
+      {canManageSettings && (
         <>
           <Link href="/(protected)/(settings)/users" style={globalStyles.link}>
             Users

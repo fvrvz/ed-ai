@@ -53,7 +53,7 @@ export default function SuperAdminClientsScreen() {
       </Text>
 
       <Link
-        href="/(protected)/(super_admin)/clients/new"
+        href="/(protected)/(super-admin)/clients/new"
         style={styles.createLink}
       >
         <Text style={styles.createLinkText}>+ Create new client</Text>
@@ -94,7 +94,7 @@ export default function SuperAdminClientsScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: "/(protected)/(super_admin)/clients/[id]" as any,
+                  pathname: "/(protected)/(super-admin)/clients/[id]",
                   params: { id: item.id },
                 })
               }

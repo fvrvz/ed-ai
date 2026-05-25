@@ -71,13 +71,13 @@ export default function SuperAdminHomeScreen() {
 
       <View style={styles.actionsRow}>
         <Link
-          href="/(protected)/(super_admin)/clients"
+          href="/(protected)/(super-admin)/clients"
           style={styles.linkButton}
         >
           <Text style={styles.linkButtonText}>View all clients</Text>
         </Link>
         <Link
-          href="/(protected)/(super_admin)/clients/new"
+          href="/(protected)/(super-admin)/clients/new"
           style={styles.linkButton}
         >
           <Text style={styles.linkButtonText}>Create client</Text>
@@ -104,7 +104,7 @@ export default function SuperAdminHomeScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: "/(protected)/(super_admin)/clients/[id]" as any,
+                  pathname: "/(protected)/(super-admin)/clients/[id]",
                   params: { id: item.id },
                 })
               }

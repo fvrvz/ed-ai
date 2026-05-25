@@ -1,14 +1,26 @@
 import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/types/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { Pressable } from "react-native";
 
+function getBackPath(role: UserRole | undefined) {
+  switch (role) {
+    case "super_admin":
+      return "/(protected)/(super-admin)";
+    case "admin":
+      return "/(protected)/(admin)";
+    default:
+      return "/(protected)/(member)";
+  }
+}
+
 export default function Layout() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { profile, isAdmin, isSuperAdmin } = useAuth();
 
   const handleBackPress = () => {
-    router.replace(isAdmin ? "/(protected)/(admin)" : "/(protected)/(member)");
+    router.replace(getBackPath(profile?.role));
   };
 
   return (
@@ -32,7 +44,7 @@ export default function Layout() {
         name="profile"
         options={{ title: "Profile", headerBackTitle: "" }}
       />
-      <Stack.Protected guard={isAdmin}>
+      <Stack.Protected guard={isAdmin || isSuperAdmin}>
         <Stack.Screen
           name="users"
           options={{ title: "Users", headerBackTitle: "" }}
