@@ -4,7 +4,7 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 
 ## 🚀 Tech Stack & Prerequisites
 
-- **Frontend Framework:** Expo 55 (React Native)
+- **Frontend Framework:** Expo 56 (React Native)
 - **Database & Core Workspace Backend:** Supabase (PostgreSQL with `pgvector`)
 - **Storage Framework:** Cloudflare R2 (S3-Compatible Object Storage) & Local Device Cache
 - **LLM Provider:** Grok AI (xAI API Free-Tier Models)
@@ -15,7 +15,7 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 
 | Component               | Technology              | Primary Responsibility / Action                                                               |
 | :---------------------- | :---------------------- | :-------------------------------------------------------------------------------------------- |
-| **Frontend Client**     | Expo 55 (React Native)  | UI presentation, file uploading pipelines, message history tracking, local keyless requests.  |
+| **Frontend Client**     | Expo 56 (React Native)  | UI presentation, file uploading pipelines, message history tracking, local keyless requests.  |
 | **Object Storage**      | Cloudflare R2           | Hosts raw learning items (PDFs, text files) grouped inside client namespaces securely.        |
 | **Vector Engine**       | Supabase (`pgvector`)   | Stores chunk strings and coordinates; runs relational index filtered RPC similarity matching. |
 | **LLM Inference Proxy** | Supabase Edge Functions | Vault isolation proxy executing serverless routines to mask client master credentials.        |
