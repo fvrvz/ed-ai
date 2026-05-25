@@ -1,20 +1,23 @@
-import { getFullName } from "@/utils/profile.helper";
-import { supabase } from "@/utils/supabase";
+import UserCard from "@/components/UserCard";
+import { globalStyles } from "@/styles/global";
+import { Profile } from "@/types/auth";
+import { getUsers } from "@/utils/db";
 import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
 
 export default function UsersScreen() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function fetchUsers() {
-    const { data, error } = await supabase.from("profiles").select("*");
-    if (error) {
-      console.error("Error fetching users:", error);
-    } else {
+    try {
+      const data = await getUsers();
       setUsers(data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -22,15 +25,20 @@ export default function UsersScreen() {
   }, []);
 
   return (
-    <FlatList
-      data={users}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <View>
-          <Text>{getFullName(item)}</Text>
-          <Text>{item.email}</Text>
-        </View>
-      )}
-    />
+    <View style={globalStyles.container}>
+      <FlatList
+        data={users}
+        refreshing={loading}
+        ListEmptyComponent={() => (
+          <View style={{ padding: 16 }}>
+            <Text>No users found.</Text>
+          </View>
+        )}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <UserCard {...item} style={{ marginBottom: 16 }} />
+        )}
+      />
+    </View>
   );
 }
