@@ -109,6 +109,51 @@ Execute your local migration sequences against your hosted live instance:
 npx supabase db push
 ```
 
+## 🧪 Local Supabase Development (Recommended for Day-to-Day Work)
+
+Use the local Supabase stack while developing so you can iterate without depending on the cloud project.
+
+1. **Start the local Supabase services**
+
+   ```bash
+   npx supabase start
+   ```
+
+2. **Apply migrations locally**
+
+   ```bash
+   npx supabase migration up
+   ```
+
+3. **Open the local Studio**
+
+   ```bash
+   npx supabase studio
+   ```
+
+4. **Use local env values in your app**
+
+   After `npx supabase start`, copy the local values into your `.env` file:
+
+   ```env
+   EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
+   ```
+
+   You can fetch the current local anon key with:
+
+   ```bash
+   npx supabase status
+   ```
+
+5. **Stop the local stack when you are done**
+
+   ```bash
+   npx supabase stop
+   ```
+
+> Use the local Supabase instance for development and testing. Use the cloud project only when you are ready to deploy or share changes externally.
+
 ## 📦 Local Installation & Getting Started
 
 1.  **Clone the repository:**
