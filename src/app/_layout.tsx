@@ -1,5 +1,6 @@
 import { SplashScreenController } from "@/components/SplashScreenController";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 

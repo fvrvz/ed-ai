@@ -1,4 +1,4 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { getFullName } from "@/utils/profile.helper";
 import { ScrollView, Text, View } from "react-native";
 

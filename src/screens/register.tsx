@@ -1,4 +1,8 @@
+import AuthButton from "@/components/AuthButton";
+import AuthInput from "@/components/AuthInput";
+import { useAuth } from "@/hooks/useAuth";
 import { Image } from "expo-image";
+import { Link } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -9,12 +13,6 @@ import {
   Text,
   View,
 } from "react-native";
-
-import AuthButton from "@/components/AuthButton";
-import AuthInput from "@/components/AuthInput";
-
-import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "expo-router";
 
 export default function RegisterScreen() {
   const { signUpWithEmail } = useAuth();

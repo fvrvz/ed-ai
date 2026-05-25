@@ -1,4 +1,4 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { colors, globalStyles } from "@/styles/global";
 import { Link } from "expo-router";
 import { Button, ScrollView, View } from "react-native";

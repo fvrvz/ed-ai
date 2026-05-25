@@ -1,30 +1,18 @@
+import { AuthContextValue, Profile } from "@/types/auth";
 import { supabase } from "@/utils/supabase";
-
 import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
-
 import {
   createContext,
   PropsWithChildren,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
 
-import { AuthContextValue, Profile } from "@/types/auth";
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-export const useAuth = (): AuthContextValue => {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-
-  return context;
-};
+export const AuthContext = createContext<AuthContextValue | undefined>(
+  undefined,
+);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
@@ -44,11 +32,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     if (error) {
       console.error("Error fetching profile:", error);
-
       setProfile(null);
       return;
     }
-
     setProfile(data);
   }, []);
 
@@ -57,7 +43,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
    */
   const refreshProfile = useCallback(async () => {
     if (!user?.id) return;
-
     await fetchProfile(user.id);
   }, [fetchProfile, user?.id]);
 
@@ -65,7 +50,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
    * Load initial auth state
    */
   const loadAuth = useCallback(async () => {
-    setAuthResolved(false); // Start as unresolved
     try {
       const sessionResponse = await supabase.auth.getSession();
       const currentSession = sessionResponse.data.session;
@@ -74,7 +58,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user?.id) {
-        // Wait for profile before setting resolved to true
         await fetchProfile(currentSession.user.id);
       } else {
         setProfile(null);
@@ -83,50 +66,52 @@ export function AuthProvider({ children }: PropsWithChildren) {
       console.error("Error loading auth:", error);
       setProfile(null);
     } finally {
-      setAuthResolved(true); // Triggers layout evaluation cleanly
+      setAuthResolved(true); // Always resolves initial load state
     }
   }, [fetchProfile]);
 
   /**
-   * Initial load
+   * Initial load execution
    */
   useEffect(() => {
     loadAuth();
   }, [loadAuth]);
 
   /**
-   * Auth state listener
+   * Auth state listener (FIXED LOOP AND REFRESH PROTECTION)
    */
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session) => {
-        console.log("Auth event:", event);
+      async (event: AuthChangeEvent, currentSession) => {
+        console.log("Auth event caught:", event);
 
-        // 1. If logging in or token refreshed, block routing by resetting authResolved
-        if (session?.user) {
+        // 1. Only show the full screen loading spinner if it's a completely fresh sign-in.
+        // Ignore TOKEN_REFRESHED so the app doesn't flash or freeze in the background.
+        if (event === "SIGNED_IN") {
           setAuthResolved(false);
         }
 
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
 
-        // Handle logout
-        if (!session?.user) {
+        // 2. Handle immediate logout cleanly
+        if (!currentSession?.user) {
           setProfile(null);
           setAuthResolved(true);
           return;
         }
 
         try {
-          // 2. Wait for the profile to download completely
-          await fetchProfile(session.user.id);
+          // 3. Fetch profile updates
+          await fetchProfile(currentSession.user.id);
         } catch (error) {
-          console.error("Error fetching profile on auth state change:", error);
+          console.error("Error updating state profile context mapping:", error);
           setProfile(null);
         } finally {
-          // 3. Only unlock routing once BOTH session AND profile data are in memory
+          // 4. GUARANTEED RESOLUTION: This block will always run even if network items fail,
+          // ensuring the UI unfreezes and doesn't get stuck on the ActivityIndicator.
           setAuthResolved(true);
         }
       },
@@ -146,10 +131,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         email,
         password,
       });
-
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     },
     [],
   );
@@ -182,10 +164,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           },
         },
       });
-
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     },
     [],
   );
@@ -195,10 +174,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
    */
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     setSession(null);
     setUser(null);
