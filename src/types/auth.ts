@@ -10,6 +10,7 @@ export interface Profile extends Base {
   role: UserRole;
   is_active: boolean;
   phone: string | null;
+  client_id: string | null;
 }
 
 export interface AuthContextValue {

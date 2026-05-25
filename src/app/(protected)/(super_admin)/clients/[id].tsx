@@ -2,10 +2,22 @@ import Title from "@/components/Title";
 import { colors, globalStyles } from "@/styles/global";
 import { Profile } from "@/types/auth";
 import { Client } from "@/types/client";
-import { changeUserRole, getClientById, getUsers } from "@/utils/db";
+import {
+  changeUserRole,
+  getClientById,
+  getUsers,
+  updateUserClient,
+} from "@/utils/db";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 export default function ClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,6 +25,7 @@ export default function ClientDetailScreen() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [assigningUserId, setAssigningUserId] = useState<string | null>(null);
 
   async function loadClientData() {
     if (!id) {
@@ -22,7 +35,7 @@ export default function ClientDetailScreen() {
     try {
       const [clientData, userData] = await Promise.all([
         getClientById(id),
-        getUsers({ clientId: id }),
+        getUsers(),
       ]);
 
       setClient(clientData);
@@ -39,7 +52,20 @@ export default function ClientDetailScreen() {
     loadClientData();
   }, [id]);
 
-  async function handleRoleChange(userId: string, targetRole: "admin" | "member") {
+  const currentUsers = useMemo(
+    () => users.filter((user) => user.client_id === id),
+    [users, id],
+  );
+
+  const otherUsers = useMemo(
+    () => users.filter((user) => user.client_id !== id),
+    [users, id],
+  );
+
+  async function handleRoleChange(
+    userId: string,
+    targetRole: "admin" | "member",
+  ) {
     setUpdatingUserId(userId);
 
     try {
@@ -56,6 +82,24 @@ export default function ClientDetailScreen() {
       Alert.alert("Unable to update role", "Please try again.");
     } finally {
       setUpdatingUserId(null);
+    }
+  }
+
+  async function handleAssignUser(userId: string) {
+    if (!id) {
+      return;
+    }
+
+    setAssigningUserId(userId);
+
+    try {
+      await updateUserClient(userId, id);
+      await loadClientData();
+    } catch (error) {
+      console.error("Error assigning user to client", error);
+      Alert.alert("Unable to assign user", "Please try again.");
+    } finally {
+      setAssigningUserId(null);
     }
   }
 
@@ -76,31 +120,43 @@ export default function ClientDetailScreen() {
   }
 
   return (
-    <ScrollView style={globalStyles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+    <ScrollView
+      style={globalStyles.container}
+      contentContainerStyle={{ paddingBottom: 32 }}
+    >
       <Title>{client.name}</Title>
       <Text style={styles.subtitle}>{client.code}</Text>
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Status</Text>
-        <Text style={[styles.statusText, client.is_active ? styles.active : styles.inactive]}>
+        <Text
+          style={[
+            styles.statusText,
+            client.is_active ? styles.active : styles.inactive,
+          ]}
+        >
           {client.is_active ? "Active" : "Inactive"}
         </Text>
         <Text style={styles.summaryLabel}>Users</Text>
-        <Text style={styles.summaryValue}>{users.length}</Text>
+        <Text style={styles.summaryValue}>{currentUsers.length}</Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Manage users</Text>
+      <Text style={styles.sectionTitle}>Current users</Text>
       <Text style={styles.sectionDescription}>
-        Update user roles for this tenant from the list below.
+        Update roles for users already assigned to this client.
       </Text>
 
-      {users.length === 0 ? (
-        <Text style={styles.emptyState}>No users are assigned to this client yet.</Text>
+      {currentUsers.length === 0 ? (
+        <Text style={styles.emptyState}>
+          No users are assigned to this client yet.
+        </Text>
       ) : (
-        users.map((user) => (
+        currentUsers.map((user) => (
           <View key={user.id} style={styles.userCard}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.userName}>{user.first_name} {user.last_name}</Text>
+              <Text style={styles.userName}>
+                {user.first_name} {user.last_name}
+              </Text>
               <Text style={styles.userEmail}>{user.email}</Text>
               <Text style={styles.roleText}>Role: {user.role}</Text>
             </View>
@@ -109,18 +165,62 @@ export default function ClientDetailScreen() {
               <Pressable
                 disabled={updatingUserId === user.id || user.role === "admin"}
                 onPress={() => handleRoleChange(user.id, "admin")}
-                style={[styles.roleButton, user.role === "admin" && styles.roleButtonDisabled]}
+                style={[
+                  styles.roleButton,
+                  user.role === "admin" && styles.roleButtonDisabled,
+                ]}
               >
                 <Text style={styles.roleButtonText}>Make admin</Text>
               </Pressable>
               <Pressable
                 disabled={updatingUserId === user.id || user.role === "member"}
                 onPress={() => handleRoleChange(user.id, "member")}
-                style={[styles.roleButton, user.role === "member" && styles.roleButtonDisabled]}
+                style={[
+                  styles.roleButton,
+                  user.role === "member" && styles.roleButtonDisabled,
+                ]}
               >
                 <Text style={styles.roleButtonText}>Make member</Text>
               </Pressable>
             </View>
+          </View>
+        ))
+      )}
+
+      <Text style={[styles.sectionTitle, styles.sectionSpacing]}>
+        Assign users
+      </Text>
+      <Text style={styles.sectionDescription}>
+        Add existing users to this client so they appear in the current users
+        list.
+      </Text>
+
+      {otherUsers.length === 0 ? (
+        <Text style={styles.emptyState}>
+          All users are already assigned to a client.
+        </Text>
+      ) : (
+        otherUsers.map((user) => (
+          <View key={user.id} style={styles.userCard}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.userName}>
+                {user.first_name} {user.last_name}
+              </Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
+              <Text style={styles.roleText}>Role: {user.role}</Text>
+            </View>
+
+            <Pressable
+              disabled={assigningUserId === user.id}
+              onPress={() => handleAssignUser(user.id)}
+              style={styles.assignButton}
+            >
+              <Text style={styles.assignButtonText}>
+                {assigningUserId === user.id
+                  ? "Assigning..."
+                  : "Assign to client"}
+              </Text>
+            </Pressable>
           </View>
         ))
       )}
@@ -168,6 +268,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 12,
   },
+  sectionSpacing: {
+    marginTop: 16,
+  },
   emptyState: {
     color: colors.textSecondary,
   },
@@ -203,6 +306,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#A5B4FC",
   },
   roleButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  assignButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: "flex-start",
+  },
+  assignButtonText: {
     color: "#fff",
     fontWeight: "700",
   },

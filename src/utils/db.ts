@@ -157,6 +157,21 @@ export async function changeUserRole(email: string, role: UserRole): Promise<Pro
     return data;
 }
 
+export async function updateUserClient(userId: string, clientId: string | null): Promise<Profile | null> {
+    const { data, error } = await supabase
+        .from("profiles")
+        .update({ client_id: clientId })
+        .eq("id", userId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error updating client assignment for user with ID ${userId}: ${error.message}`);
+    }
+
+    return data;
+}
+
 export async function getDocuments(filterOptions?: FilterOptions<Document>): Promise<Document[]> {
     let query = supabase.from("documents").select("*");
 
