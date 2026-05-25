@@ -1,13 +1,14 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 
 type KPICardProps = {
   title: string;
   value: string | number;
+  style?: StyleProp<ViewStyle>;
 };
 
-export default function KPICard({ title, value }: KPICardProps) {
+export default function KPICard({ title, value, style }: KPICardProps) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, style]}>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.value}>{value}</Text>
     </View>
