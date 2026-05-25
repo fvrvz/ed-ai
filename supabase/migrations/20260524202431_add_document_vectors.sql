@@ -7,7 +7,7 @@ CREATE TABLE public.documents (
     client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
     course_id UUID, -- Optional: Link to a specific course if needed
     name TEXT NOT NULL, -- e.g., "manual.pdf"
-    storage_url TEXT NOT NULL, -- The Cloudflare R2 file URL path
+    storage_url TEXT NOT NULL, -- The Supabase Storage public URL
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
