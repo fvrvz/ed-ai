@@ -1,4 +1,4 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { globalStyles } from "@/styles/global";
 import { ScrollView, Text } from "react-native";
 
