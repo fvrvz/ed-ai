@@ -1,4 +1,5 @@
 import { Profile, UserRole } from "@/types/auth";
+import { Base } from "@/types/base";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
 import { Document } from "@/types/document";
 import { supabase } from "./supabase";
@@ -218,4 +219,27 @@ export async function getAssignmentsByUserIdWithCourse(userId: string): Promise<
         ...assignment,
         course: courseMap.get(assignment.course_id) ?? null,
     }));
+}
+
+export async function createCourse(course: Omit<Course, keyof Base>): Promise<Course> {
+    const { data, error } = await supabase.from("courses").insert(course).select().single();
+    if (error) {
+        throw new Error(`Error creating course: ${error.message}`);
+    }
+    return data;
+}
+
+export async function updateCourse(courseId: string, updates: Partial<Omit<Course, keyof Base>>): Promise<Course> {
+    const { data, error } = await supabase.from("courses").update(updates).eq("id", courseId).select().single();
+    if (error) {
+        throw new Error(`Error updating course with ID ${courseId}: ${error.message}`);
+    }
+    return data;
+}
+
+export async function deleteCourse(courseId: string): Promise<void> {
+    const { error } = await supabase.from("courses").delete().eq("id", courseId);
+    if (error) {
+        throw new Error(`Error deleting course with ID ${courseId}: ${error.message}`);
+    }
 }
