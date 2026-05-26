@@ -3,7 +3,8 @@ import Title from "@/components/Title";
 import { colors, globalStyles } from "@/styles/global";
 import { Client } from "@/types/client";
 import { getClients, getUsers } from "@/utils/db";
-import { useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function SuperAdminAnalyticsScreen() {
@@ -11,25 +12,27 @@ export default function SuperAdminAnalyticsScreen() {
   const [users, setUsers] = useState<{ role: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadAnalytics() {
-      try {
-        const [clientData, usersData] = await Promise.all([
-          getClients(),
-          getUsers(),
-        ]);
+  async function loadAnalytics() {
+    try {
+      const [clientData, usersData] = await Promise.all([
+        getClients(),
+        getUsers(),
+      ]);
 
-        setClients(clientData);
-        setUsers(usersData);
-      } catch (error) {
-        console.error("Error loading analytics", error);
-      } finally {
-        setLoading(false);
-      }
+      setClients(clientData);
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Error loading analytics", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    loadAnalytics();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadAnalytics();
+    }, []),
+  );
 
   const stats = useMemo(() => {
     const activeClients = clients.filter((item) => item.is_active).length;
@@ -61,12 +64,32 @@ export default function SuperAdminAnalyticsScreen() {
         <Text>Loading analytics...</Text>
       ) : (
         <View style={styles.kpiGrid}>
-          <KPICard title="Clients" value={clients.length} />
-          <KPICard title="Active clients" value={stats.activeClients} />
-          <KPICard title="Inactive clients" value={stats.inactiveClients} />
-          <KPICard title="Users" value={stats.usersCount} />
-          <KPICard title="Admins" value={stats.admins} />
-          <KPICard title="Members" value={stats.members} />
+          <KPICard
+            title="Clients"
+            value={clients.length}
+            style={styles.kpiCard}
+          />
+          <KPICard
+            title="Active clients"
+            value={stats.activeClients}
+            style={styles.kpiCard}
+          />
+          <KPICard
+            title="Inactive clients"
+            value={stats.inactiveClients}
+            style={styles.kpiCard}
+          />
+          <KPICard
+            title="Users"
+            value={stats.usersCount}
+            style={styles.kpiCard}
+          />
+          <KPICard title="Admins" value={stats.admins} style={styles.kpiCard} />
+          <KPICard
+            title="Members"
+            value={stats.members}
+            style={styles.kpiCard}
+          />
         </View>
       )}
     </ScrollView>
@@ -81,7 +104,9 @@ const styles = StyleSheet.create({
   kpiGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
+    columnGap: 12,
+  },
+  kpiCard: {
+    flex: 1,
   },
 });
