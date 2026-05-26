@@ -1,9 +1,10 @@
+import Badge from "@/components/Badge";
 import Title from "@/components/Title";
 import { globalStyles } from "@/styles/global";
 import { Course } from "@/types/course";
 import { getCourses } from "@/utils/db";
-import { Link } from "expo-router";
-import { useEffect, useState } from "react";
+import { Link, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { FlatList, Text, View } from "react-native";
 
 export default function CoursesScreen() {
@@ -21,9 +22,11 @@ export default function CoursesScreen() {
     }
   }
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCourses();
+    }, []),
+  );
 
   return (
     <View style={globalStyles.container}>
@@ -46,13 +49,20 @@ export default function CoursesScreen() {
           <View
             style={{
               padding: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: "#ccc",
+              backgroundColor: "#fff",
+              borderRadius: 8,
+              flexDirection: "column",
+              gap: 5,
             }}
           >
-            <Text>{item.title}</Text>
+            <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+              {item.title}
+            </Text>
             <Text>{item.description}</Text>
-            <Text>{item.is_published ? "Published" : "Not Published"}</Text>
+            <Badge
+              text={item.is_published ? "Published" : "Not Published"}
+              color={item.is_published ? "green" : "red"}
+            />
           </View>
         )}
         keyExtractor={(item) => item.id}
