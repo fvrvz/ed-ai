@@ -2,12 +2,18 @@ import { SplashScreenController } from "@/components/SplashScreenController";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Stack } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Button, Text, View } from "react-native";
 
 function RootNavigator() {
-  const { authResolved, isLoggedIn, profile } = useAuth();
+  const {
+    authResolved,
+    isLoggedIn,
+    profile,
+    profileLoading,
+    profileError,
+    signOut,
+  } = useAuth();
 
-  // 1. STAGE 1: System is booting up (reading storage)
   if (!authResolved) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -16,12 +22,28 @@ function RootNavigator() {
     );
   }
 
-  // 2. STAGE 2: User just logged in, but Profile is still fetching
-  // This prevents a "flicker" where the user might see a member screen before being redirected to admin.
-  if (isLoggedIn && !profile) {
+  if (isLoggedIn && profileLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (isLoggedIn && profileError && !profile) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+        }}
+      >
+        <Text style={{ textAlign: "center", marginBottom: 12 }}>
+          We couldn't load your profile. Please sign out and sign back in.
+        </Text>
+        <Button title="Sign out" onPress={signOut} />
       </View>
     );
   }

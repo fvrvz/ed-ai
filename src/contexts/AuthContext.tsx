@@ -18,22 +18,54 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+    setProfileLoading(true);
+    setProfileError(null);
 
-    if (error) {
+    let lastError: unknown;
+
+    try {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+
+        if (!error) {
+          setProfile(data);
+          return;
+        }
+
+        lastError = error;
+
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+
+      console.error("Error fetching profile:", lastError);
+      setProfile(null);
+      setProfileError(
+        lastError instanceof Error
+          ? lastError.message
+          : "Unable to load your profile. Please sign out and sign back in.",
+      );
+    } catch (error) {
       console.error("Error fetching profile:", error);
       setProfile(null);
-      // We do NOT throw here, just handle gracefully
-      return;
+      setProfileError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load your profile. Please sign out and sign back in.",
+      );
+    } finally {
+      setProfileLoading(false);
     }
-    setProfile(data);
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -43,25 +75,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const loadAuth = useCallback(async () => {
     try {
-      // 1. Get the session from AsyncStorage (Fast)
       const {
         data: { session: currentSession },
       } = await supabase.auth.getSession();
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-
-      // 2. If we have a user, fetch the profile immediately
-      if (currentSession?.user) {
-        await fetchProfile(currentSession.user.id);
-      }
     } catch (error) {
       console.error("Error loading initial auth:", error);
     } finally {
-      // 3. Unblock the App - The ONLY place we handle the initial unblock
       setAuthResolved(true);
     }
-  }, [fetchProfile]);
+  }, []);
 
   useEffect(() => {
     loadAuth();
@@ -71,34 +96,48 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession) => {
+      (event: AuthChangeEvent, currentSession) => {
         console.log(`Auth Event: ${event}`);
 
-        // 1. Update strict auth state immediately
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
-        // 2. Handle Logout
         if (!currentSession?.user) {
           setProfile(null);
+          setProfileLoading(false);
+          setProfileError(null);
           return;
         }
 
-        // 3. Handle Login / Token Refresh / User Updates
-        // We fetch the profile to keep data fresh, but we DO NOT block the UI.
-        // The app is already running (authResolved is true), so this happens in background.
-        try {
-          await fetchProfile(currentSession.user.id);
-        } catch (error) {
-          console.error("Profile update error:", error);
-        }
+        setProfileLoading(true);
+        setProfileError(null);
       },
     );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []);
+
+  useEffect(() => {
+    if (!authResolved) {
+      return;
+    }
+
+    if (!user?.id) {
+      setProfile(null);
+      setProfileLoading(false);
+      setProfileError(null);
+      return;
+    }
+
+    if (profile?.id === user.id) {
+      setProfileLoading(false);
+      return;
+    }
+
+    void fetchProfile(user.id);
+  }, [authResolved, fetchProfile, profile, user?.id]);
 
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
@@ -148,6 +187,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession(null);
     setUser(null);
     setProfile(null);
+    setProfileLoading(false);
+    setProfileError(null);
   }, []);
 
   const value = useMemo(
@@ -155,6 +196,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       session,
       user,
       profile,
+      profileLoading,
+      profileError,
       authResolved,
       isLoggedIn: !!session,
       signInWithEmail,
@@ -168,6 +211,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       session,
       user,
       profile,
+      profileLoading,
+      profileError,
       authResolved,
       signInWithEmail,
       signUpWithEmail,

@@ -17,6 +17,8 @@ export interface AuthContextValue {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  profileLoading: boolean;
+  profileError: string | null;
   authResolved: boolean;
   isLoggedIn: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
