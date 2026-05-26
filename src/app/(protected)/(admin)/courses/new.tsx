@@ -1,8 +1,12 @@
 import InputControl from "@/components/InputControl";
+import { useAuth } from "@/hooks/useAuth";
+import { createCourse } from "@/utils/db";
 import { useState } from "react";
-import { Button, KeyboardAvoidingView, Text, View } from "react-native";
+import { Alert, Button, KeyboardAvoidingView, Text, View } from "react-native";
 
 export default function NewCourseScreen() {
+  const { profile } = useAuth();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -19,22 +23,25 @@ export default function NewCourseScreen() {
   async function handlePublish() {
     if (!validateForm()) {
       console.error("Please fill in all fields.");
+      Alert.alert("Validation Error", "Please fill in all fields.");
       return;
     }
 
     setSubmitting(true);
     try {
       const newCourse = {
-        client_id: "your-client-id", // Replace with actual client ID
+        client_id: profile?.client_id || "",
         title,
         description,
         is_published: true,
       };
-      // Call your API to create the course
-      // await createCourse(newCourse);
+
+      await createCourse(newCourse);
+      Alert.alert("Success", "Course published successfully.");
       console.log("Course published:", newCourse);
       clearForm();
     } catch (error) {
+      Alert.alert("Error", "Failed to publish course.");
       console.error("Error publishing course:", error);
     } finally {
       setSubmitting(false);
@@ -43,23 +50,25 @@ export default function NewCourseScreen() {
 
   async function handleSaveDraft() {
     if (!validateForm()) {
-      console.error("Please fill in all fields.");
+      Alert.alert("Validation Error", "Please fill in all fields.");
       return;
     }
 
     setSubmitting(true);
     try {
       const newCourse = {
-        client_id: "your-client-id", // Replace with actual client ID
+        client_id: profile?.client_id || "",
         title,
         description,
         is_published: false,
       };
-      // Call your API to create the course
-      // await createCourse(newCourse);
+
+      await createCourse(newCourse);
+      Alert.alert("Success", "Course saved as draft.");
       console.log("Course saved as draft:", newCourse);
       clearForm();
     } catch (error) {
+      Alert.alert("Error", "Failed to save course as draft.");
       console.error("Error saving course as draft:", error);
     } finally {
       setSubmitting(false);
