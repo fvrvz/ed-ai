@@ -145,7 +145,7 @@ export async function getUserByEmail(email: string): Promise<Profile | null> {
     return data;
 }
 
-export async function changeUserRole(email: string, role: UserRole): Promise<Profile | null> {
+export async function changeUserRole(email: string, role: Omit<UserRole, 'super_admin'>): Promise<Profile | null> {
     const { data, error } = await supabase
         .from("profiles")
         .update({ role })

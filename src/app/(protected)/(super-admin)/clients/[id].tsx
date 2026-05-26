@@ -1,11 +1,12 @@
 import Title from "@/components/Title";
 import { colors, globalStyles } from "@/styles/global";
-import { Profile } from "@/types/auth";
+import { Profile, UserRole } from "@/types/auth";
 import { Client } from "@/types/client";
 import {
   changeUserRole,
   getClientById,
   getUsers,
+  updateClient,
   updateUserClient,
 } from "@/utils/db";
 import { useLocalSearchParams } from "expo-router";
@@ -15,6 +16,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from "react-native";
@@ -26,6 +28,7 @@ export default function ClientDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [assigningUserId, setAssigningUserId] = useState<string | null>(null);
+  const [isClientActive, setIsClientActive] = useState<boolean>(false);
 
   async function loadClientData() {
     if (!id) {
@@ -40,6 +43,7 @@ export default function ClientDetailScreen() {
 
       setClient(clientData);
       setUsers(userData);
+      setIsClientActive(clientData?.is_active || false);
     } catch (error) {
       console.error("Error loading client details", error);
       Alert.alert("Unable to load client", "Please try again.");
@@ -64,7 +68,7 @@ export default function ClientDetailScreen() {
 
   async function handleRoleChange(
     userId: string,
-    targetRole: "admin" | "member",
+    targetRole: Omit<UserRole, "super_admin">,
   ) {
     setUpdatingUserId(userId);
 
@@ -103,6 +107,42 @@ export default function ClientDetailScreen() {
     }
   }
 
+  async function toggleClientStatus(value: boolean) {
+    Alert.prompt(
+      value ? "Activate client" : "Deactivate client",
+      `Are you sure you want to ${value ? "activate" : "deactivate"} this client?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => setIsClientActive(!value), // Revert toggle
+        },
+        {
+          text: "Yes",
+          onPress: () => updateClientStatus(value),
+        },
+      ],
+    );
+  }
+
+  async function updateClientStatus(value: boolean) {
+    setIsClientActive(value);
+
+    try {
+      const data = await updateClient(id!, { is_active: value });
+      setClient(data);
+
+      Alert.alert(
+        "Status updated",
+        `Client has been ${value ? "activated" : "deactivated"}.`,
+      );
+    } catch (error) {
+      console.error("Error updating client status", error);
+      Alert.alert("Unable to update status", "Please try again.");
+      setIsClientActive(!value); // Revert toggle on error
+    }
+  }
+
   if (loading) {
     return (
       <View style={globalStyles.container}>
@@ -128,17 +168,22 @@ export default function ClientDetailScreen() {
       <Text style={styles.subtitle}>{client.code}</Text>
 
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>Status</Text>
-        <Text
-          style={[
-            styles.statusText,
-            client.is_active ? styles.active : styles.inactive,
-          ]}
-        >
-          {client.is_active ? "Active" : "Inactive"}
-        </Text>
-        <Text style={styles.summaryLabel}>Users</Text>
-        <Text style={styles.summaryValue}>{currentUsers.length}</Text>
+        <View>
+          <Text style={styles.summaryLabel}>Status</Text>
+          <Text
+            style={[
+              styles.statusText,
+              client.is_active ? styles.active : styles.inactive,
+            ]}
+          >
+            {client.is_active ? "Active" : "Inactive"}
+          </Text>
+          <Text style={styles.summaryLabel}>Users</Text>
+          <Text style={styles.summaryValue}>{currentUsers.length}</Text>
+        </View>
+        <View>
+          <Switch value={isClientActive} onValueChange={toggleClientStatus} />
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Current users</Text>
@@ -238,6 +283,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     marginBottom: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   summaryLabel: {
     color: colors.textSecondary,

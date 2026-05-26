@@ -1,5 +1,6 @@
 import KPICard from "@/components/KPICard";
 import Title from "@/components/Title";
+import { useAuth } from "@/hooks/useAuth";
 import { colors, globalStyles } from "@/styles/global";
 import { Client } from "@/types/client";
 import { getClients, getUsers } from "@/utils/db";
@@ -16,6 +17,7 @@ import {
 
 export default function SuperAdminHomeScreen() {
   const router = useRouter();
+  const { profile } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [usersCount, setUsersCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function SuperAdminHomeScreen() {
       style={globalStyles.container}
       contentContainerStyle={{ paddingBottom: 32 }}
     >
-      <Title>Super Admin Dashboard</Title>
+      <Title>Welcome, {profile?.first_name}</Title>
       <Text style={styles.subtitle}>
         Monitor your tenants, usage, and client health from one place.
       </Text>
@@ -112,7 +114,10 @@ export default function SuperAdminHomeScreen() {
             >
               <View>
                 <Text style={styles.clientName}>{item.name}</Text>
-                <Text style={styles.clientCode}>{item.code}</Text>
+                <Text style={styles.clientCode}>Code: {item.code}</Text>
+                <Text style={styles.clientCode}>
+                  Created on {new Date(item.created_at).toLocaleDateString()}
+                </Text>
               </View>
               <Text
                 style={[
@@ -139,18 +144,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 10,
   },
   actionsRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
     marginBottom: 24,
   },
   linkButton: {
     flex: 1,
     backgroundColor: colors.primary,
     paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
   },
