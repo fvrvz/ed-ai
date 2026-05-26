@@ -1,0 +1,1 @@
+ALTER TABLE public.system_settings DROP COLUMN IF EXISTS supabase_service_role_key;

@@ -3,7 +3,8 @@ import { supabase } from './supabase';
 interface EmbeddingRequest {
   clientId: string;
   documentId: string;
-  textChunks: string[];
+  storagePath: string;
+  fileType: string;
 }
 
 /**

@@ -56,3 +56,42 @@ export const uploadDocumentToStorage = async ({
     throw error;
   }
 };
+
+/**
+ * Deletes a file from Supabase Storage using its public URL or raw folder path.
+ * @param storageUrl Or absolute file path inside the bucket (e.g. 'clientId/1715800000-manual.pdf')
+ */
+export const deleteDocumentFromStorage = async (storageUrl: string): Promise<void> => {
+  try {
+    // 1. Verify user authentication
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      throw new Error("Action denied: User is unauthenticated.");
+    }
+
+    // 2. Extract the relative path if a full URL is passed
+    let relativePath = storageUrl;
+    if (storageUrl.includes("/storage/v1/object/public/documents/")) {
+      relativePath = storageUrl.split("/storage/v1/object/public/documents/")[1];
+    }
+
+    // 3. Request deletion from Supabase Storage bucket
+    const { data, error } = await supabase.storage
+      .from("documents")
+      .remove([relativePath]);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    // If data array comes back empty, it means the file path didn't match anything in the bucket
+    if (!data || data.length === 0) {
+      throw new Error("Target file was not found in storage bucket during deletion routine.");
+    }
+
+    console.log(`Successfully removed file from storage bucket: ${relativePath}`);
+  } catch (error) {
+    console.error("Supabase Storage delete helper failure:", error);
+    throw error;
+  }
+};

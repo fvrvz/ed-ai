@@ -206,6 +206,23 @@ export async function getDocumentsByCourseId(courseId: string): Promise<Document
     return data;
 }
 
+
+export async function addDocument(payload: Omit<Document, keyof Base>): Promise<Document> {
+    const { data, error } = await supabase.from("documents").insert(payload).select().single<Document>();
+    if (error) {
+        throw new Error(`Error adding document: ${error.message}`);
+    }
+    return data;
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+    const { error } = await supabase.from("documents").delete().eq<keyof Document>('id', id);
+    if (error) {
+        throw new Error(`Error adding document: ${error.message}`);
+    }
+}
+
+
 async function getAssignmentsForUser(userId: string): Promise<Assignment[]> {
     const { data: directAssignments, error: directError } = await supabase
         .from("course_assignments")
