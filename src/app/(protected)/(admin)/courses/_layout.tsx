@@ -19,6 +19,12 @@ export default function CoursesLayout() {
           title: "Create Course",
         }}
       />
+      <Stack.Screen
+        name="[id]"
+        options={{
+          title: "Course Details",
+        }}
+      />
     </Stack>
   );
 }

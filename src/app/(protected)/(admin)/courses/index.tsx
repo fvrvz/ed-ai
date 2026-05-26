@@ -3,11 +3,13 @@ import Title from "@/components/Title";
 import { globalStyles } from "@/styles/global";
 import { Course } from "@/types/course";
 import { getCourses } from "@/utils/db";
-import { Link, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 
 export default function CoursesScreen() {
+  const router = useRouter();
+
   const [courses, setCourses] = useState<Course[]>([]);
 
   async function fetchCourses() {
@@ -28,6 +30,10 @@ export default function CoursesScreen() {
     }, []),
   );
 
+  function navigateToCourse(courseId: string) {
+    router.push(`/(protected)/(admin)/courses/${courseId}`);
+  }
+
   return (
     <View style={globalStyles.container}>
       <View style={{ marginBottom: 16 }}>
@@ -46,24 +52,26 @@ export default function CoursesScreen() {
         data={courses}
         ListEmptyComponent={() => <Text>No courses found.</Text>}
         renderItem={({ item }) => (
-          <View
-            style={{
-              padding: 16,
-              backgroundColor: "#fff",
-              borderRadius: 8,
-              flexDirection: "column",
-              gap: 5,
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-              {item.title}
-            </Text>
-            <Text>{item.description}</Text>
-            <Badge
-              text={item.is_published ? "Published" : "Not Published"}
-              color={item.is_published ? "green" : "red"}
-            />
-          </View>
+          <Pressable onPress={() => navigateToCourse(item.id)}>
+            <View
+              style={{
+                padding: 16,
+                backgroundColor: "#fff",
+                borderRadius: 8,
+                flexDirection: "column",
+                gap: 5,
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+                {item.title}
+              </Text>
+              <Text>{item.description}</Text>
+              <Badge
+                text={item.is_published ? "Published" : "Not Published"}
+                color={item.is_published ? "green" : "red"}
+              />
+            </View>
+          </Pressable>
         )}
         keyExtractor={(item) => item.id}
       />
