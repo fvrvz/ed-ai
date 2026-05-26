@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { colors, globalStyles } from "@/styles/global";
 import { Client } from "@/types/client";
 import { getClients, getUsers } from "@/utils/db";
-import { Link, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { Link, useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -22,25 +22,27 @@ export default function SuperAdminHomeScreen() {
   const [usersCount, setUsersCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const [clientData, usersData] = await Promise.all([
-          getClients({ sortBy: "created_at", sortOrder: "desc" }),
-          getUsers(),
-        ]);
+  async function loadDashboard() {
+    try {
+      const [clientData, usersData] = await Promise.all([
+        getClients({ sortBy: "created_at", sortOrder: "desc" }),
+        getUsers(),
+      ]);
 
-        setClients(clientData);
-        setUsersCount(usersData.length);
-      } catch (error) {
-        console.error("Error loading dashboard", error);
-      } finally {
-        setLoading(false);
-      }
+      setClients(clientData);
+      setUsersCount(usersData.length);
+    } catch (error) {
+      console.error("Error loading dashboard", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    loadDashboard();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard();
+    }, []),
+  );
 
   const stats = useMemo(() => {
     const activeClients = clients.filter((client) => client.is_active).length;

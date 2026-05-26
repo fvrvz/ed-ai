@@ -108,7 +108,7 @@ export default function ClientDetailScreen() {
   }
 
   async function toggleClientStatus(value: boolean) {
-    Alert.prompt(
+    Alert.alert(
       value ? "Activate client" : "Deactivate client",
       `Are you sure you want to ${value ? "activate" : "deactivate"} this client?`,
       [
