@@ -1,48 +1,119 @@
 import { withSupabase } from "@supabase/server";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-// Clean alias import linked directly through deno.json
-import { createClient } from "@supabase/supabase-js";
+
+// Parsers
+import mammoth from "mammoth";
+import pdf from "pdf-parse";
+import * as XLSX from "xlsx";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const cleanText = (text: string) => text.replace(/\s+/g, " ").trim();
+
 export default {
   fetch: withSupabase({ auth: ["user"] }, async (req, ctx) => {
-    if (req.method === 'OPTIONS') {
-      return new Response('ok', { headers: corsHeaders });
-    }
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+    const adminClient = ctx.supabaseAdmin;
+    let targetDocumentId: string | null = null;
 
     try {
-      const { clientId, documentId, textChunks } = await req.json();
-      if (!clientId || !documentId || !textChunks) {
-        throw new Error('Missing parameter matrix.');
+      const { clientId, documentId, storagePath, fileType } = await req.json();
+      
+      if (!clientId || !documentId || !storagePath) {
+        throw new Error('Missing required parameters: clientId, documentId, or storagePath');
       }
 
-      const { data: settings, error: settingsError } = await ctx.supabaseAdmin
-        .from('system_settings')
-        .select('supabase_service_role_key')
-        .eq('client_id', clientId)
-        .single();
+      // Store documentId globally within scope for fallback error processing
+      targetDocumentId = documentId;
 
-      if (settingsError || !settings || !settings.supabase_service_role_key) {
-        throw new Error('Failed to retrieve isolated client database keys.');
+      // 1️⃣ Initialize State: Explicitly set status to processing
+      await adminClient
+        .from('documents')
+        .update({ embedding_status: 'processing' })
+        .eq('id', targetDocumentId);
+
+      // --------------------------------------------------------------------------
+      // FIX: Universal Robust Path Extraction
+      // --------------------------------------------------------------------------
+      let storageUrl = "";
+      try {
+        const parsedUrl = new URL(storagePath);
+        const pathSegments = parsedUrl.pathname.split('/documents/');
+        
+        if (pathSegments.length < 2) {
+          throw new Error("Could not locate '/documents/' bucket keyword in the URI structure.");
+        }
+        
+        // Grab everything after the bucket name container segment
+        storageUrl = decodeURIComponent(pathSegments[1]);
+      } catch (urlError) {
+        // Fallback: If it's already a relative path rather than a URL
+        storageUrl = decodeURIComponent(storagePath);
       }
 
-      const clientDbInstance = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        settings.supabase_service_role_key
-      );
+      // Download & Parse (Using the Admin Client)
+      console.log(`Downloading: ${storageUrl}`);
+      const { data: fileBlob, error: downloadError } = await adminClient
+        .storage
+        .from('documents')
+        .download(storageUrl);
+
+      if (downloadError || !fileBlob) throw new Error(`Download failed: ${downloadError?.message}`);
+
+      const arrayBuffer = await fileBlob.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer); 
+      let extractedText = "";
+
+      // ... [Parsing Logic is Identical] ...
+      switch (true) {
+        case fileType.includes('pdf'):
+          const pdfData = await pdf(Buffer.from(buffer));
+          extractedText = pdfData.text;
+          break;
+        case fileType.includes('word') || fileType.includes('docx'):
+          const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+          extractedText = result.value;
+          break;
+        case fileType.includes('sheet') || fileType.includes('excel'):
+          const workbook = XLSX.read(buffer, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          extractedText = XLSX.utils.sheet_to_txt(worksheet);
+          break;
+        default: // Text/MD
+          extractedText = new TextDecoder().decode(buffer);
+          break;
+      }
+
+      if (!extractedText || extractedText.length < 10) {
+        throw new Error("File appears empty or text could not be extracted.");
+      }
+
+      // ✂️ Chunk & Embed
+      const textChunks: string[] = [];
+      const chunkSize = 1000;
+      const overlap = 200;
+      const saneText = cleanText(extractedText);
+
+      let i = 0;
+      while (i < saneText.length) {
+        textChunks.push(saneText.substring(i, i + chunkSize));
+        i += (chunkSize - overlap);
+      }
 
       for (const chunk of textChunks) {
         const mockVector = Array.from({ length: 1536 }, () => Math.random());
 
-        const { error: insertError } = await clientDbInstance
+        // Use adminClient (ctx.supabaseAdmin) to bypass RLS for insertion
+        const { error: insertError } = await adminClient
           .from('document_chunks')
           .insert({
             client_id: clientId,
-            document_id: documentId,
+            document_id: targetDocumentId,
             content: chunk,
             embedding: mockVector
           });
@@ -50,9 +121,36 @@ export default {
         if (insertError) throw insertError;
       }
 
-      return Response.json({ success: true, message: 'Vectors processed successfully.' }, { headers: corsHeaders });
+      // 2️⃣ SUCCESS STATE: Update table row tracker to completed
+      await adminClient
+        .from('documents')
+        .update({ 
+          embedding_status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetDocumentId);
+
+      return Response.json({ success: true, chunksProcessed: textChunks.length }, { headers: corsHeaders });
 
     } catch (error: any) {
+      console.error("🚨 Embeddings processing failure caught:", error.message);
+
+      // 3️⃣ FAILURE STATE: If we have a valid document ID, flag row as failed to clean the UI
+      if (targetDocumentId) {
+        try {
+          await adminClient
+            .from('documents')
+            .update({ 
+              embedding_status: 'failed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', targetDocumentId);
+          console.log(`Document status flagged as failed for ID: ${targetDocumentId}`);
+        } catch (dbStatusError: any) {
+          console.error("Failed to write failed error matrix status to database:", dbStatusError.message);
+        }
+      }
+
       return Response.json({ error: error.message }, { status: 400, headers: corsHeaders });
     }
   }),

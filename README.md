@@ -6,7 +6,7 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 
 - **Frontend Framework:** Expo 56 (React Native)
 - **Database & Core Workspace Backend:** Supabase (PostgreSQL with `pgvector`)
-- **Storage Framework:** Cloudflare R2 (S3-Compatible Object Storage) & Local Device Cache
+- **Storage Framework:** Supabase Storage & Local Device Cache
 - **LLM Provider:** Grok AI (xAI API Free-Tier Models)
 - **Runtime Environment:** Node.js v24.15.0
 - **Package Manager:** npm v11.12.1
@@ -16,14 +16,14 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 | Component               | Technology              | Primary Responsibility / Action                                                               |
 | :---------------------- | :---------------------- | :-------------------------------------------------------------------------------------------- |
 | **Frontend Client**     | Expo 56 (React Native)  | UI presentation, file uploading pipelines, message history tracking, local keyless requests.  |
-| **Object Storage**      | Cloudflare R2           | Hosts raw learning items (PDFs, text files) grouped inside client namespaces securely.        |
+| **Object Storage**      | Supabase Storage        | Hosts raw learning items (PDFs, text files) grouped inside client namespaces securely.        |
 | **Vector Engine**       | Supabase (`pgvector`)   | Stores chunk strings and coordinates; runs relational index filtered RPC similarity matching. |
 | **LLM Inference Proxy** | Supabase Edge Functions | Vault isolation proxy executing serverless routines to mask client master credentials.        |
 | **LLM Inference**       | Grok AI (xAI API)       | Receives context-rich prompts bound by course documentation constraints to generate replies.  |
 
 ### Multi-Tenant RAG Operations Pipeline
 
-1. **Document Storage:** Admins link documentation items to an explicit course. The binary payload streams up to **Cloudflare R2** via the serverless proxy. The resulting URI reference is recorded in Supabase.
+1. **Document Storage:** Admins link documentation items to an explicit course. The binary payload uploads directly to **Supabase Storage** and the resulting public URL is recorded in Supabase.
 2. **Offline Memory Mirroring:** Core course metadata grids and thread schemas cache directly onto local storage arrays for near-instant client-side loading configurations.
 3. **Isolated Vectorization:** Documents are divided into granular text pieces. The `generate-embeddings` edge worker utilizes the client's scoped service master key to bypass RLS barriers and write the rows.
 4. **Targeted Context Retrieval:** When a student posts a question within a course view, the message history and active `course_id` pass to the `grok-chat` edge function. An optimized Database Remote Procedure Call (`match_course_chunks`) runs an HNSW-indexed cosine similarity scan isolated **strictly** to that specific course.
@@ -35,7 +35,7 @@ EdAI is an AI-powered, RAG-driven multi-tenant learning management platform. It 
 
 - **Multi-Tenant Client Provisioning:** Maintain independent client profiles and fully isolated encryption setting matrices.
 - **Course & Project Management:** Create, structure, and assign custom training courses.
-- **Targeted Knowledge Base Building:** Upload files straight to Cloudflare R2 mapped explicitly down to individual course modules.
+- **Targeted Knowledge Base Building:** Upload files straight to Supabase Storage mapped explicitly down to individual course modules.
 - **AI & Manual Quiz Generation:** Build assessments manually or prompt Grok models to output custom validation questions.
 - **Analytics Dashboard:** Track platform engagement, progress loops, and failure percentages.
 - **Knowledge Gap Resolution:** Address unresolved support threads and failed AI query logs by expanding course documentation blocks.
@@ -98,7 +98,6 @@ npx supabase functions deploy
 
 # Or target individual workers to isolate compilation feedback
 npx supabase functions deploy grok-chat
-npx supabase functions deploy r2-upload
 npx supabase functions deploy generate-embeddings
 ```
 
@@ -109,6 +108,51 @@ Execute your local migration sequences against your hosted live instance:
 ```bash
 npx supabase db push
 ```
+
+## 🧪 Local Supabase Development (Recommended for Day-to-Day Work)
+
+Use the local Supabase stack while developing so you can iterate without depending on the cloud project.
+
+1. **Start the local Supabase services**
+
+   ```bash
+   npx supabase start
+   ```
+
+2. **Apply migrations locally**
+
+   ```bash
+   npx supabase migration up
+   ```
+
+3. **Open the local Studio**
+
+   ```bash
+   npx supabase studio
+   ```
+
+4. **Use local env values in your app**
+
+   After `npx supabase start`, copy the local values into your `.env` file:
+
+   ```env
+   EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
+   ```
+
+   You can fetch the current local anon key with:
+
+   ```bash
+   npx supabase status
+   ```
+
+5. **Stop the local stack when you are done**
+
+   ```bash
+   npx supabase stop
+   ```
+
+> Use the local Supabase instance for development and testing. Use the cloud project only when you are ready to deploy or share changes externally.
 
 ## 📦 Local Installation & Getting Started
 
@@ -134,7 +178,7 @@ npx supabase db push
     EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anonymous_public_key
     ```
 
-    _(Note: Master keys for Grok AI, Cloudflare R2 credentials, and Supabase service roles are intentionally omitted from client env setups. They reside encrypted inside the database vault to guarantee total app safety)._
+    _(Note: Master keys for Grok AI and Supabase service roles are intentionally omitted from client env setups. They reside encrypted inside the database vault to guarantee total app safety)._
 
 4.  **Start the Expo application:**
     ```bash

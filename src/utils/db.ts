@@ -1,6 +1,9 @@
 import { Profile, UserRole } from "@/types/auth";
+import { Base } from "@/types/base";
+import { Client } from "@/types/client";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
-import { Document } from "@/types/document";
+import { Document, DocumentChunk } from "@/types/document";
+import { SystemSettings } from "@/types/system-settings";
 import { supabase } from "./supabase";
 
 interface FilterOptions<T> {
@@ -44,6 +47,67 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     return data;
 }
 
+export async function getClients(filterOptions?: FilterOptions<Client>): Promise<Client[]> {
+    let query = supabase.from("clients").select("*");
+
+    if (filterOptions?.isActive !== undefined) {
+        query = query.eq("is_active", filterOptions.isActive);
+    }
+
+    if (filterOptions?.sortBy) {
+        query = query.order(filterOptions.sortBy, { ascending: filterOptions.sortOrder === "asc" });
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        throw new Error(`Error fetching clients: ${error.message}`);
+    }
+    return data;
+}
+
+export async function getClientById(clientId: string): Promise<Client | null> {
+    const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", clientId)
+        .single();
+
+    if (error) {
+        throw new Error(`Error fetching client with ID ${clientId}: ${error.message}`);
+    }
+
+    return data;
+}
+
+export async function createClient(client: Omit<Client, keyof Base>): Promise<Client> {
+    const { data, error } = await supabase
+        .from("clients")
+        .insert(client)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error creating client: ${error.message}`);
+    }
+
+    return data;
+}
+
+export async function updateClient(clientId: string, updates: Partial<Omit<Client, keyof Base>>): Promise<Client> {
+    const { data, error } = await supabase
+        .from("clients")
+        .update(updates)
+        .eq("id", clientId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error updating client with ID ${clientId}: ${error.message}`);
+    }
+
+    return data;
+}
+
 export async function getUsers(filterOptions?: FilterOptions<Profile>): Promise<Profile[]> {
     let query = supabase.from("profiles").select("*");
 
@@ -82,7 +146,7 @@ export async function getUserByEmail(email: string): Promise<Profile | null> {
     return data;
 }
 
-export async function changeUserRole(email: string, role: UserRole): Promise<Profile | null> {
+export async function changeUserRole(email: string, role: Omit<UserRole, 'super_admin'>): Promise<Profile | null> {
     const { data, error } = await supabase
         .from("profiles")
         .update({ role })
@@ -91,6 +155,21 @@ export async function changeUserRole(email: string, role: UserRole): Promise<Pro
     if (error) {
         throw new Error(`Error changing role for user with email ${email}: ${error.message}`);
     }
+    return data;
+}
+
+export async function updateUserClient(userId: string, clientId: string | null): Promise<Profile | null> {
+    const { data, error } = await supabase
+        .from("profiles")
+        .update({ client_id: clientId })
+        .eq("id", userId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error updating client assignment for user with ID ${userId}: ${error.message}`);
+    }
+
     return data;
 }
 
@@ -127,6 +206,30 @@ export async function getDocumentsByCourseId(courseId: string): Promise<Document
     }
     return data;
 }
+
+
+export async function addDocument(payload: Omit<Document, keyof Base | 'embedding_status'>): Promise<Document> {
+    const { data, error } = await supabase.from("documents").insert(payload).select().single<Document>();
+    if (error) {
+        throw new Error(`Error adding document: ${error.message}`);
+    }
+    return data;
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+    const { error } = await supabase.from("documents").delete().eq<keyof Document>('id', id);
+    if (error) {
+        throw new Error(`Error adding document: ${error.message}`);
+    }
+}
+
+export async function deleteEmbeddingByDocumentId(id: string): Promise<void> {
+    const { error } = await supabase.from("document_chunks").delete().eq<keyof DocumentChunk>('document_id', id);
+    if (error) {
+        throw new Error(`Error deleting document chunks: ${error.message}`);
+    }
+}
+
 
 async function getAssignmentsForUser(userId: string): Promise<Assignment[]> {
     const { data: directAssignments, error: directError } = await supabase
@@ -218,4 +321,56 @@ export async function getAssignmentsByUserIdWithCourse(userId: string): Promise<
         ...assignment,
         course: courseMap.get(assignment.course_id) ?? null,
     }));
+}
+
+export async function createCourse(course: Omit<Course, keyof Base>): Promise<Course> {
+    const { data, error } = await supabase.from("courses").insert(course).select().single();
+    if (error) {
+        throw new Error(`Error creating course: ${error.message}`);
+    }
+    return data;
+}
+
+export async function updateCourse(courseId: string, updates: Partial<Omit<Course, keyof Base>>): Promise<Course> {
+    const { data, error } = await supabase.from("courses").update(updates).eq("id", courseId).select().single();
+    if (error) {
+        throw new Error(`Error updating course with ID ${courseId}: ${error.message}`);
+    }
+    return data;
+}
+
+export async function deleteCourse(courseId: string): Promise<void> {
+    const { error } = await supabase.from("courses").delete().eq("id", courseId);
+    if (error) {
+        throw new Error(`Error deleting course with ID ${courseId}: ${error.message}`);
+    }
+}
+
+export async function getSystemSettingsForClient(clientId: string): Promise<SystemSettings | null> {
+    const {data, error} = await supabase.from('system_settings').select('*').eq<keyof SystemSettings>('client_id', clientId).maybeSingle<SystemSettings>();
+    if(error) {
+        throw new Error(`Error fetching system settings for reason: ${error.message}`)
+    }
+
+    if(!data) {
+        console.log('Data not available')
+        return null
+    }
+    return data
+}
+
+export async function updateSystemSettingsForClient(clientId: string, payload: Partial<Omit<SystemSettings, keyof Base>>): Promise<SystemSettings> {
+    const {data, error} = await supabase.from('system_settings').update(payload).eq<keyof SystemSettings>('client_id', clientId).select('*').single<SystemSettings>();
+    if(error) {
+        throw new Error(`Error updating system settings for reason: ${error.message}`)
+    }
+    return data
+}
+
+export async function createSystemSettingsForClient(payload: Partial<Omit<SystemSettings, keyof Base>>): Promise<SystemSettings> {
+    const {data, error} = await supabase.from('system_settings').insert(payload).select().single<SystemSettings>();
+    if(error) {
+        throw new Error(`Error inserting system settings for reason: ${error.message}`)
+    }
+    return data
 }

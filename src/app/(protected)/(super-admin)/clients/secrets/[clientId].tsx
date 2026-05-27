@@ -1,35 +1,41 @@
 import InputControl from "@/components/InputControl";
 import Title from "@/components/Title";
-import { useAuth } from "@/hooks/useAuth";
 import { globalStyles } from "@/styles/global";
+import { SystemSettings } from "@/types/system-settings";
 import {
+  createSystemSettingsForClient,
   getSystemSettingsForClient,
   updateSystemSettingsForClient,
 } from "@/utils/db";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Button,
-  KeyboardAvoidingView,
+  ScrollView,
   Text,
   View,
 } from "react-native";
 
-export default function SecretsScreen() {
-  const { profile } = useAuth();
+export default function ClientSecrets() {
+  const { clientId } = useLocalSearchParams<{ clientId: string }>();
 
   const [grokApiKey, setGrokApiKey] = useState("");
   const [grokModelName, setGrokModelName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [settingExists, setSettingExists] = useState(false);
 
   async function loadData() {
-    if (!profile?.client_id) return;
+    if (!clientId) return;
 
     setLoading(true);
     try {
-      const data = await getSystemSettingsForClient(profile.client_id);
+      const data = await getSystemSettingsForClient(clientId);
+
+      if (!data) setSettingExists(false);
+      else setSettingExists(true);
+
       setGrokApiKey(data?.grok_api_key || "");
       setGrokModelName(data?.grok_model_name || "");
     } catch (error) {
@@ -46,22 +52,32 @@ export default function SecretsScreen() {
   );
 
   async function handleUpdate() {
-    if (!profile?.client_id) return;
+    if (!clientId) return;
 
     setLoading(true);
 
     try {
-      const data = await updateSystemSettingsForClient(profile.client_id, {
-        grok_api_key: grokApiKey,
-        grok_model_name: grokModelName,
-      });
+      let data: SystemSettings;
 
-      const { grok_api_key, grok_model_name } = data;
+      if (settingExists) {
+        data = await updateSystemSettingsForClient(clientId, {
+          grok_api_key: grokApiKey,
+          grok_model_name: grokModelName,
+        });
+      } else {
+        data = await createSystemSettingsForClient({
+          client_id: clientId,
+          grok_api_key: grokApiKey,
+          grok_model_name: grokModelName,
+        });
+      }
+
+      const { grok_api_key = "", grok_model_name = "" } = data;
       setGrokApiKey(grok_api_key);
       setGrokModelName(grok_model_name);
-
-      console.log("Updated successfully");
-      Alert.alert("Updated successfully");
+      setSettingExists(true);
+      console.log("Operation successful");
+      Alert.alert("Operation successful");
     } catch (error) {
       console.error("Unable to update system settings", error);
       Alert.alert("Something went wrong!");
@@ -71,7 +87,7 @@ export default function SecretsScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={globalStyles.container}>
+    <ScrollView style={globalStyles.container}>
       <Title style={{ marginBottom: 12 }}>Secrets</Title>
       <Text>Grok Secrets</Text>
       {loading ? (
@@ -93,9 +109,12 @@ export default function SecretsScreen() {
             />
           </View>
 
-          <Button title="Update Secrets" onPress={handleUpdate} />
+          <Button
+            title={settingExists ? "Update Secrets" : "Create Secrets"}
+            onPress={handleUpdate}
+          />
         </>
       )}
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }

@@ -3,8 +3,11 @@ import { supabase } from './supabase';
 interface EmbeddingRequest {
   clientId: string;
   documentId: string;
-  textChunks: string[];
+  storagePath: string;
+  fileType: string;
 }
+
+interface EmbeddingResponse { success: boolean, chunksProcessed: number }
 
 /**
  * Client-side basic text segmentation tool (Sliding window token alternative)
@@ -26,14 +29,14 @@ export const chunkTextContent = (text: string, chunkSize: number = 1000, overlap
  */
 export const triggerVectorProcessing = async (payload: EmbeddingRequest): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-embeddings', {
+    const { data, error } = await supabase.functions.invoke<EmbeddingResponse>('generate-embeddings', {
       method: 'POST',
       body: payload,
     });
 
     if (error) throw new Error(error.message);
     return data?.success || false;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Vector processing hook transaction failure:', error);
     throw error;
   }
