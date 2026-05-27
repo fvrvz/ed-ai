@@ -49,6 +49,8 @@ export default function Layout() {
           name="users"
           options={{ title: "Users", headerBackTitle: "" }}
         />
+      </Stack.Protected>
+      <Stack.Protected guard={isAdmin}>
         <Stack.Screen
           name="secrets"
           options={{ title: "Secrets", headerBackTitle: "" }}

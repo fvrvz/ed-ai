@@ -17,17 +17,14 @@ export default function SettingsScreen() {
         Profile
       </Link>
       {canManageSettings && (
-        <>
-          <Link href="/(protected)/(settings)/users" style={globalStyles.link}>
-            Users
-          </Link>
-          <Link
-            href="/(protected)/(settings)/secrets"
-            style={globalStyles.link}
-          >
-            Secrets
-          </Link>
-        </>
+        <Link href="/(protected)/(settings)/users" style={globalStyles.link}>
+          Users
+        </Link>
+      )}
+      {isAdmin && (
+        <Link href="/(protected)/(settings)/secrets" style={globalStyles.link}>
+          Secrets
+        </Link>
       )}
       <View style={{ alignSelf: "flex-start", marginVertical: 8 }}>
         <Button title="Sign out" onPress={signOut} color={colors.error} />

@@ -9,7 +9,7 @@ import {
   updateClient,
   updateUserClient,
 } from "@/utils/db";
-import { useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -184,6 +184,21 @@ export default function ClientDetailScreen() {
         <View>
           <Switch value={isClientActive} onValueChange={toggleClientStatus} />
         </View>
+      </View>
+
+      <View
+        style={{
+          justifyContent: "flex-end",
+          flexDirection: "row",
+          marginBottom: 10,
+        }}
+      >
+        <Link
+          href={`/(protected)/(super-admin)/clients/secrets/${id}`}
+          style={{ color: colors.primary }}
+        >
+          Manage Secrets
+        </Link>
       </View>
 
       <Text style={styles.sectionTitle}>Current users</Text>
