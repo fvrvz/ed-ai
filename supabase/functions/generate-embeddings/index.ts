@@ -17,12 +17,24 @@ export default {
   fetch: withSupabase({ auth: ["user"] }, async (req, ctx) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+    const adminClient = ctx.supabaseAdmin;
+    let targetDocumentId: string | null = null;
+
     try {
       const { clientId, documentId, storagePath, fileType } = await req.json();
       
       if (!clientId || !documentId || !storagePath) {
         throw new Error('Missing required parameters: clientId, documentId, or storagePath');
       }
+
+      // Store documentId globally within scope for fallback error processing
+      targetDocumentId = documentId;
+
+      // 1️⃣ Initialize State: Explicitly set status to processing
+      await adminClient
+        .from('documents')
+        .update({ embedding_status: 'processing' })
+        .eq('id', targetDocumentId);
 
       // --------------------------------------------------------------------------
       // FIX: Universal Robust Path Extraction
@@ -42,8 +54,6 @@ export default {
         // Fallback: If it's already a relative path rather than a URL
         storageUrl = decodeURIComponent(storagePath);
       }
-
-      const adminClient = ctx.supabaseAdmin;
 
       // Download & Parse (Using the Admin Client)
       console.log(`Downloading: ${storageUrl}`);
@@ -103,7 +113,7 @@ export default {
           .from('document_chunks')
           .insert({
             client_id: clientId,
-            document_id: documentId,
+            document_id: targetDocumentId,
             content: chunk,
             embedding: mockVector
           });
@@ -111,14 +121,41 @@ export default {
         if (insertError) throw insertError;
       }
 
+      // 2️⃣ SUCCESS STATE: Update table row tracker to completed
+      await adminClient
+        .from('documents')
+        .update({ 
+          embedding_status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetDocumentId);
+
       return Response.json({ success: true, chunksProcessed: textChunks.length }, { headers: corsHeaders });
 
     } catch (error: any) {
-      console.error(error);
+      console.error("🚨 Embeddings processing failure caught:", error.message);
+
+      // 3️⃣ FAILURE STATE: If we have a valid document ID, flag row as failed to clean the UI
+      if (targetDocumentId) {
+        try {
+          await adminClient
+            .from('documents')
+            .update({ 
+              embedding_status: 'failed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', targetDocumentId);
+          console.log(`Document status flagged as failed for ID: ${targetDocumentId}`);
+        } catch (dbStatusError: any) {
+          console.error("Failed to write failed error matrix status to database:", dbStatusError.message);
+        }
+      }
+
       return Response.json({ error: error.message }, { status: 400, headers: corsHeaders });
     }
   }),
 };
+
 
 
 /* To invoke locally:

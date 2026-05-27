@@ -2,7 +2,7 @@ import { Profile, UserRole } from "@/types/auth";
 import { Base } from "@/types/base";
 import { Client } from "@/types/client";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
-import { Document } from "@/types/document";
+import { Document, DocumentChunk } from "@/types/document";
 import { supabase } from "./supabase";
 
 interface FilterOptions<T> {
@@ -207,7 +207,7 @@ export async function getDocumentsByCourseId(courseId: string): Promise<Document
 }
 
 
-export async function addDocument(payload: Omit<Document, keyof Base>): Promise<Document> {
+export async function addDocument(payload: Omit<Document, keyof Base | 'embedding_status'>): Promise<Document> {
     const { data, error } = await supabase.from("documents").insert(payload).select().single<Document>();
     if (error) {
         throw new Error(`Error adding document: ${error.message}`);
@@ -219,6 +219,13 @@ export async function deleteDocument(id: string): Promise<void> {
     const { error } = await supabase.from("documents").delete().eq<keyof Document>('id', id);
     if (error) {
         throw new Error(`Error adding document: ${error.message}`);
+    }
+}
+
+export async function deleteEmbeddingByDocumentId(id: string): Promise<void> {
+    const { error } = await supabase.from("document_chunks").delete().eq<keyof DocumentChunk>('document_id', id);
+    if (error) {
+        throw new Error(`Error deleting document chunks: ${error.message}`);
     }
 }
 

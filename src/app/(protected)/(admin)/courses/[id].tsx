@@ -7,6 +7,7 @@ import { Document } from "@/types/document";
 import {
   addDocument,
   deleteDocument,
+  deleteEmbeddingByDocumentId,
   getCourseById,
   getDocumentsByCourseId,
 } from "@/utils/db";
@@ -18,7 +19,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { ComponentProps, useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +29,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+function getEmbeddingVariant(
+  status: Document["embedding_status"],
+): ComponentProps<typeof Badge>["variant"] {
+  switch (status) {
+    case "completed":
+      return "success";
+    case "processing":
+      return "warning";
+    default:
+      return "error";
+  }
+}
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -58,8 +72,7 @@ export default function CourseDetailScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadCourseData();
-      loadDocumentData();
+      Promise.all([loadCourseData(), loadDocumentData()]);
     }, [id]),
   );
 
@@ -103,12 +116,16 @@ export default function CourseDetailScreen() {
         fileUri: selectedDocument?.uri!,
       });
 
+      if (!storageUrl) throw new Error("Document upload failed");
+
       const newEntry = await addDocument({
         client_id: profile.client_id,
         course_id: id,
         name: selectedDocument?.name!,
         storage_url: storageUrl,
       });
+
+      if (!newEntry) throw new Error("Document entry insert operation failed");
 
       setDocuments((prev) => [...prev, newEntry]);
 
@@ -117,7 +134,7 @@ export default function CourseDetailScreen() {
         documentId: newEntry.id,
         fileType: selectedDocument?.mimeType!,
         storagePath: storageUrl,
-      });
+      }).finally(() => loadDocumentData());
 
       console.log(`Document uploaded successfully ${newEntry.name}`);
     } catch (error) {
@@ -140,6 +157,7 @@ export default function CourseDetailScreen() {
       await Promise.all([
         deleteDocument(id),
         deleteDocumentFromStorage(storageUri),
+        deleteEmbeddingByDocumentId(id),
       ]);
       console.log("Document deleted successfully");
       Alert.alert("Deleted successfully");
@@ -261,18 +279,32 @@ export default function CourseDetailScreen() {
                     {item.name}
                   </Text>
                   <Text>{new Date(item.updated_at).toLocaleDateString()}</Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 5,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text>Embedding:</Text>
+                    <Badge
+                      text={item.embedding_status.toUpperCase()}
+                      variant={getEmbeddingVariant(item.embedding_status)}
+                    />
+                  </View>
                 </View>
-                <Pressable
-                  onPress={() =>
-                    handleDocumentDelete(item.id, item.storage_url)
-                  }
+                <View
+                  style={{ flexDirection: "row", gap: 5, alignItems: "center" }}
                 >
-                  <Ionicons
-                    name="close-circle"
-                    color={colors.error}
-                    size={25}
-                  />
-                </Pressable>
+                  {/* <ActivityIndicator size="small" /> */}
+                  <Pressable
+                    onPress={() =>
+                      handleDocumentDelete(item.id, item.storage_url)
+                    }
+                  >
+                    <Ionicons name="trash" color={colors.error} size={25} />
+                  </Pressable>
+                </View>
               </View>
             )}
             keyExtractor={(item) => item.id}
