@@ -3,6 +3,7 @@ import { Base } from "@/types/base";
 import { Client } from "@/types/client";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
 import { Document, DocumentChunk } from "@/types/document";
+import { SystemSettings } from "@/types/system-settings";
 import { supabase } from "./supabase";
 
 interface FilterOptions<T> {
@@ -343,4 +344,25 @@ export async function deleteCourse(courseId: string): Promise<void> {
     if (error) {
         throw new Error(`Error deleting course with ID ${courseId}: ${error.message}`);
     }
+}
+
+export async function getSystemSettingsForClient(clientId: string): Promise<SystemSettings | null> {
+    const {data, error} = await supabase.from('system_settings').select('*').eq<keyof SystemSettings>('client_id', clientId).maybeSingle<SystemSettings>();
+    if(error) {
+        throw new Error(`Error fetching system settings for reason: ${error.message}`)
+    }
+
+    if(!data) {
+        console.log('Data not available')
+        return null
+    }
+    return data
+}
+
+export async function updateSystemSettingsForClient(clientId: string, payload: Partial<Omit<SystemSettings, keyof Base>>): Promise<SystemSettings> {
+    const {data, error} = await supabase.from('system_settings').update(payload).eq<keyof SystemSettings>('client_id', clientId).single<SystemSettings>();
+    if(error) {
+        throw new Error(`Error updating system settings for reason: ${error.message}`)
+    }
+    return data
 }
