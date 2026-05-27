@@ -359,10 +359,23 @@ export async function getSystemSettingsForClient(clientId: string): Promise<Syst
     return data
 }
 
-export async function updateSystemSettingsForClient(clientId: string, payload: Partial<Omit<SystemSettings, keyof Base>>): Promise<SystemSettings> {
-    const {data, error} = await supabase.from('system_settings').update(payload).eq<keyof SystemSettings>('client_id', clientId).single<SystemSettings>();
+export async function updateSystemSettingsForClient(clientId: string, payload: Partial<Omit<SystemSettings, keyof Base>>): Promise<SystemSettings | null> {
+    const {data, error} = await supabase.from('system_settings').update(payload).eq<keyof SystemSettings>('client_id', clientId).maybeSingle<SystemSettings>();
     if(error) {
         throw new Error(`Error updating system settings for reason: ${error.message}`)
+    }
+
+    if(!data) {
+        console.log('Data not available')
+        return null
+    }
+    return data
+}
+
+export async function createSystemSettingsForClient(payload: Partial<Omit<SystemSettings, keyof Base>>): Promise<SystemSettings> {
+    const {data, error} = await supabase.from('system_settings').insert(payload).eq<keyof SystemSettings>('client_id', payload.client_id).single<SystemSettings>();
+    if(error) {
+        throw new Error(`Error inserting system settings for reason: ${error.message}`)
     }
     return data
 }

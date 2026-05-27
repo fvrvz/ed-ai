@@ -8,7 +8,14 @@ import {
 } from "@/utils/db";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Alert, Button, KeyboardAvoidingView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Button,
+  KeyboardAvoidingView,
+  Text,
+  View,
+} from "react-native";
 
 export default function SecretsScreen() {
   const { profile } = useAuth();
@@ -23,7 +30,6 @@ export default function SecretsScreen() {
     setLoading(true);
     try {
       const data = await getSystemSettingsForClient(profile.client_id);
-
       setGrokApiKey(data?.grok_api_key || "");
       setGrokModelName(data?.grok_model_name || "");
     } catch (error) {
@@ -39,7 +45,7 @@ export default function SecretsScreen() {
     }, []),
   );
 
-  async function handleSubmit() {
+  async function handleUpdate() {
     if (!profile?.client_id) return;
 
     setLoading(true);
@@ -49,6 +55,12 @@ export default function SecretsScreen() {
         grok_api_key: grokApiKey,
         grok_model_name: grokModelName,
       });
+
+      if (!data) throw new Error("Data not available");
+
+      const { grok_api_key, grok_model_name } = data;
+      setGrokApiKey(grok_api_key);
+      setGrokModelName(grok_model_name);
 
       console.log("Updated successfully");
       Alert.alert("Updated successfully");
@@ -63,23 +75,29 @@ export default function SecretsScreen() {
   return (
     <KeyboardAvoidingView style={globalStyles.container}>
       <Title style={{ marginBottom: 12 }}>Secrets</Title>
-      <View>
-        <Text>Grok Secrets</Text>
-        <InputControl
-          label="Grok API Key"
-          value={grokApiKey}
-          onChange={setGrokApiKey}
-          placeholder="gsk_..."
-        />
-        <InputControl
-          label="Grok Model"
-          value={grokModelName}
-          onChange={setGrokModelName}
-          placeholder="llama-3.3-70b-versatile"
-        />
-      </View>
+      <Text>Grok Secrets</Text>
+      {loading ? (
+        <ActivityIndicator />
+      ) : (
+        <>
+          <View>
+            <InputControl
+              label="Grok API Key"
+              value={grokApiKey}
+              onChange={setGrokApiKey}
+              placeholder="gsk_..."
+            />
+            <InputControl
+              label="Grok Model"
+              value={grokModelName}
+              onChange={setGrokModelName}
+              placeholder="llama-3.3-70b-versatile"
+            />
+          </View>
 
-      <Button title="Save Secrets" onPress={handleSubmit} />
+          <Button title="Update Secrets" onPress={handleUpdate} />
+        </>
+      )}
     </KeyboardAvoidingView>
   );
 }
