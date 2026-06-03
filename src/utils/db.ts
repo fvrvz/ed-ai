@@ -1,5 +1,6 @@
 import { Profile, UserRole } from "@/types/auth";
 import { Base } from "@/types/base";
+import { ChatMessage, ChatSession } from "@/types/chat";
 import { Client } from "@/types/client";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
 import { Document, DocumentChunk } from "@/types/document";
@@ -373,4 +374,34 @@ export async function createSystemSettingsForClient(payload: Partial<Omit<System
         throw new Error(`Error inserting system settings for reason: ${error.message}`)
     }
     return data
+}
+
+export async function getChatSessions(options?: Partial<ChatSession>): Promise<ChatSession[]> {
+    const query = supabase.from('chat_sessions').select('*');
+
+    if (options?.id) {
+        query.eq('id', options.id);
+    }
+
+    if (options?.course_id) {
+        query.eq('course_id', options.course_id);
+    }
+
+    if (options?.profile_id) {
+        query.eq('profile_id', options.profile_id);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        throw new Error(`Error fetching chat sessions: ${error.message}`);
+    }
+    return data;
+}
+
+export async function getChatMessagesBySessionId(sessionId: string): Promise<ChatMessage[]> {
+    const { data, error } = await supabase.from('chat_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
+    if (error) {
+        throw new Error(`Error fetching chat messages for session ID ${sessionId}: ${error.message}`);
+    }
+    return data;
 }
