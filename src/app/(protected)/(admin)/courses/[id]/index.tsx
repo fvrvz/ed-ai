@@ -18,7 +18,7 @@ import {
 } from "@/utils/storage-service";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { ComponentProps, useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -46,6 +46,7 @@ function getEmbeddingVariant(
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
+  const router = useRouter();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -169,6 +170,10 @@ export default function CourseDetailScreen() {
     }
   }
 
+  function handleChatPress() {
+    router.navigate(`/(protected)/(admin)/courses/${id}/chat`);
+  }
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -205,6 +210,28 @@ export default function CourseDetailScreen() {
           />
         </View>
       )}
+
+      <View style={{ marginTop: 32 }}>
+        <TouchableOpacity
+          style={{
+            padding: 5,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            flexDirection: "row",
+            gap: 5,
+            alignItems: "center",
+            width: "auto",
+            alignSelf: "flex-end",
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+          onPress={handleChatPress}
+        >
+          <Ionicons name="chatbubble-outline" size={20} />
+          <Text>Chat</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={{ marginTop: 32 }}>
         <Title style={{ marginBottom: 5 }}>Course Content</Title>
