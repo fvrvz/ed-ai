@@ -13,6 +13,41 @@ const corsHeaders = {
 
 const cleanText = (text: string) => text.replace(/\s+/g, " ").trim();
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
+
+async function generateEmbedding(text: string, hfApiKey: string): Promise<number[]> {
+  try {
+    const response = await fetch('https://router.huggingface.co/hf-inference/models/google/embeddinggemma-300m/pipeline/feature-extraction', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${hfApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ inputs: text })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Hugging Face embedding response:', data);
+    return data;
+  } catch (error) {
+    console.error('generate-embeddings: Hugging Face embedding failed', { error: getErrorMessage(error) });
+    throw new Error(`Hugging Face embedding generation failed: ${getErrorMessage(error)}`);
+  }
+}
+
 export default {
   fetch: withSupabase({ auth: ["user"] }, async (req, ctx) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -26,6 +61,20 @@ export default {
       if (!clientId || !documentId || !storagePath) {
         throw new Error('Missing required parameters: clientId, documentId, or storagePath');
       }
+
+
+      // Fetch Hugging Face API key from system settings
+      const { data: hfSettings, error: hfSettingsError } = await adminClient
+        .from('system_settings')
+        .select('huggingface_api_key')
+        .eq('client_id', clientId)
+        .single();
+
+      if (hfSettingsError || !hfSettings?.huggingface_api_key) {
+        throw new Error('Failed to retrieve Hugging Face API key for this client.');
+      }
+
+      const hfApiKey = hfSettings.huggingface_api_key;
 
       // Store documentId globally within scope for fallback error processing
       targetDocumentId = documentId;
@@ -106,7 +155,7 @@ export default {
       }
 
       for (const chunk of textChunks) {
-        const mockVector = Array.from({ length: 1536 }, () => Math.random());
+        const embedding = await generateEmbedding(chunk, hfApiKey);
 
         // Use adminClient (ctx.supabaseAdmin) to bypass RLS for insertion
         const { error: insertError } = await adminClient
@@ -115,7 +164,7 @@ export default {
             client_id: clientId,
             document_id: targetDocumentId,
             content: chunk,
-            embedding: mockVector
+            embedding: embedding
           });
 
         if (insertError) throw insertError;

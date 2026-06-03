@@ -20,8 +20,9 @@ import {
 export default function SecretsScreen() {
   const { profile } = useAuth();
 
-  const [grokApiKey, setGrokApiKey] = useState("");
-  const [grokModelName, setGrokModelName] = useState("");
+  const [groqApiKey, setGroqApiKey] = useState("");
+  const [groqModelName, setGroqModelName] = useState("");
+  const [huggingFaceApiKey, setHuggingFaceApiKey] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -30,8 +31,9 @@ export default function SecretsScreen() {
     setLoading(true);
     try {
       const data = await getSystemSettingsForClient(profile.client_id);
-      setGrokApiKey(data?.grok_api_key || "");
-      setGrokModelName(data?.grok_model_name || "");
+      setGroqApiKey(data?.groq_api_key || "");
+      setGroqModelName(data?.groq_model_name || "");
+      setHuggingFaceApiKey(data?.huggingface_api_key || "");
     } catch (error) {
       console.error(error);
     } finally {
@@ -52,13 +54,15 @@ export default function SecretsScreen() {
 
     try {
       const data = await updateSystemSettingsForClient(profile.client_id, {
-        grok_api_key: grokApiKey,
-        grok_model_name: grokModelName,
+        groq_api_key: groqApiKey,
+        groq_model_name: groqModelName,
+        huggingface_api_key: huggingFaceApiKey,
       });
 
-      const { grok_api_key, grok_model_name } = data;
-      setGrokApiKey(grok_api_key);
-      setGrokModelName(grok_model_name);
+      const { groq_api_key, groq_model_name, huggingface_api_key } = data;
+      setGroqApiKey(groq_api_key);
+      setGroqModelName(groq_model_name);
+      setHuggingFaceApiKey(huggingface_api_key);
 
       console.log("Updated successfully");
       Alert.alert("Updated successfully");
@@ -73,23 +77,30 @@ export default function SecretsScreen() {
   return (
     <KeyboardAvoidingView style={globalStyles.container}>
       <Title style={{ marginBottom: 12 }}>Secrets</Title>
-      <Text>Grok Secrets</Text>
+      <Text>Groq Secrets</Text>
+      <Text>Hugging Face Secrets</Text>
       {loading ? (
         <ActivityIndicator />
       ) : (
         <>
           <View>
             <InputControl
-              label="Grok API Key"
-              value={grokApiKey}
-              onChange={setGrokApiKey}
+              label="Groq API Key"
+              value={groqApiKey}
+              onChange={setGroqApiKey}
               placeholder="gsk_..."
             />
             <InputControl
-              label="Grok Model"
-              value={grokModelName}
-              onChange={setGrokModelName}
+              label="Groq Model"
+              value={groqModelName}
+              onChange={setGroqModelName}
               placeholder="llama-3.3-70b-versatile"
+            />
+            <InputControl
+              label="Hugging Face API Key"
+              value={huggingFaceApiKey}
+              onChange={setHuggingFaceApiKey}
+              placeholder="hf_..."
             />
           </View>
 
