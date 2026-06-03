@@ -4,16 +4,25 @@ import { sendChatMessageToGrok } from "@/utils/chat-service";
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useRef, useState } from "react";
 import {
+  Dimensions,
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import ChatBubble from "./ChatBubble";
+import ChatSidebar from "./ChatSidebar";
 import Title from "./Title";
 
 type Props = {
@@ -21,6 +30,10 @@ type Props = {
   clientId: string;
   courseId: string;
 };
+
+// 1. Get the screen width to calculate side positioning
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.75; // Sidebar fills 75% of screen width
 
 export default function Chat({
   messages: msgs = [],
@@ -34,6 +47,35 @@ export default function Chat({
   const [messages, setMessages] = useState<typeof msgs>([...msgs]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const translateX = useSharedValue(-SIDEBAR_WIDTH);
+
+  const toggleSidebar = () => {
+    if (sidebarOpen) {
+      // Slide back into hiding position
+      translateX.value = withTiming(-SIDEBAR_WIDTH, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 1, 0.5, 1),
+      });
+    } else {
+      // Slide out into fully open position (X = 0)
+      translateX.value = withTiming(0, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 1, 0.5, 1),
+      });
+    }
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const animatedSidebarStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const animatedOverlayStyle = useAnimatedStyle(() => ({
+    // If open, opacity goes to 0.5, otherwise 0
+    opacity: withTiming(translateX.value === 0 ? 0.5 : 0, { duration: 300 }),
+  }));
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -91,7 +133,12 @@ export default function Chat({
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         style={{ flex: 1 }}
       >
-        <Title>Chat</Title>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <TouchableOpacity onPress={toggleSidebar} style={{ padding: 8 }}>
+            <Ionicons name="menu" size={24} color="#374151" />
+          </TouchableOpacity>
+          <Title>Chat</Title>
+        </View>
 
         {error && (
           <View style={styles.errorContainer}>
@@ -135,6 +182,16 @@ export default function Chat({
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      {/* BACKDROP OVERLAY: Taps here close the drawer smoothly */}
+      {sidebarOpen && (
+        <Animated.View style={[styles.overlay, animatedOverlayStyle]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={toggleSidebar} />
+        </Animated.View>
+      )}
+
+      <Animated.View style={[styles.sidebar, animatedSidebarStyle]}>
+        <ChatSidebar courseId={courseId} profileId={profile?.id!} />
+      </Animated.View>
     </View>
   );
 }
@@ -189,5 +246,56 @@ const styles = StyleSheet.create({
     color: "#fca5a5",
     fontWeight: "500",
     fontSize: 14,
+  },
+
+  /* OVERLAY BACKDROP STYLES */
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "#000000",
+    zIndex: 10,
+  },
+  /* SIDEBAR DRAWER STYLES */
+  sidebar: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: SIDEBAR_WIDTH,
+    backgroundColor: "#1c1c1e",
+    zIndex: 20, // Forces sidebar to stack over everything else
+    paddingTop: 50, // Pushes elements safely past status bars
+    borderRightWidth: 1,
+    borderRightColor: "#2c2c2e",
+    elevation: 5, // Android shadows fallback
+    shadowColor: "#000000", // iOS native shadow mapping
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  sidebarHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2c2c2e",
+  },
+  sidebarTitle: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  sessionList: {
+    padding: 12,
+    gap: 8,
+  },
+  sessionItem: {
+    padding: 14,
+    borderRadius: 8,
+  },
+  activeSession: {
+    backgroundColor: "#2c2c2e",
+  },
+  sessionText: {
+    color: "#ffffff",
+    fontSize: 15,
   },
 });
