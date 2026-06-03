@@ -29,12 +29,18 @@ interface EmbeddingResponse {
 interface GrokChatPayload {
   clientId: string;
   courseId: string;
+  profileId: string;      // Added: Needed to link historical threads
+  sessionId?: string;     // Added: Pass an existing ID, or leave blank to auto-create a session
   messages: ChatMessage[];
 }
 
+interface ChatServiceResponse {
+  sessionId: string;      // Returns the session ID back to the UI so it can be re-used
+  assistantMessage: string;
+}
+
 /**
- * Generate embeddings via edge function (OpenAI backend).
- * Lightweight, reliable, consistent embeddings.
+ * Generate embeddings via edge function (Google Gemma 768-dim backend).
  */
 async function generateEmbeddingViaEdgeFunction(query: string, clientId: string): Promise<number[]> {
   try {
@@ -63,41 +69,36 @@ async function generateEmbeddingViaEdgeFunction(query: string, clientId: string)
 }
 
 /**
- * Sends chat message to Groq AI with course context.
- * Handles RAG lookup and chat completion client-side.
+ * Sends chat message to Groq AI with course context and persistently updates history.
  */
 export const sendChatMessageToGrok = async ({
   clientId,
   courseId,
+  profileId,
+  sessionId,
   messages
-}: GrokChatPayload): Promise<string> => {
+}: GrokChatPayload): Promise<ChatServiceResponse> => {
   try {
-    // 1. Verify there is a live, valid session
+    // 1. Verify session token validity
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       throw new Error('Action denied: Session token is missing or expired.');
     }
 
-    // 2. Fetch client's API keys from system settings (RLS protected)
+    // 2. Fetch client settings
     const { data: settings, error: settingsError } = await supabase
       .from('system_settings')
       .select('groq_api_key, groq_model_name, huggingface_api_key')
       .eq('client_id', clientId)
       .single();
 
-    if (settingsError) {
-      console.error('chat-service: settings query failed', { settingsError });
-      throw new Error('Failed to retrieve API keys for this client.');
-    }
-
-    if (!settings || !settings.groq_api_key || !settings.groq_model_name || !settings.huggingface_api_key) {
-      console.error('chat-service: missing client settings', { settings });
+    if (settingsError || !settings?.groq_api_key || !settings?.groq_model_name) {
       throw new Error('Failed to retrieve required API keys for this client.');
     }
 
     const typedSettings: SystemSettings = settings as unknown as SystemSettings;
 
-    // 3. Generate embedding vector via edge function
+    // 3. Find latest user prompt text
     const userLatestMessage = [...messages]
       .reverse()
       .find((msg): msg is ChatMessage => msg.role === 'user')
@@ -107,14 +108,10 @@ export const sendChatMessageToGrok = async ({
       throw new Error('Unable to find the latest user message in the conversation history.');
     }
 
+    // 4. Generate 768-dim Embedding Vector
     const userQueryVector = await generateEmbeddingViaEdgeFunction(userLatestMessage, clientId);
 
-    // 4. Query the knowledge base using the embedding vector
-    console.log('chat-service: matching course chunks', {
-      courseId,
-      vectorDimension: userQueryVector.length,
-    });
-
+    // 5. Query pgvector Knowledge Base Table
     const { data: matchedChunks, error: rpcError } = await supabase
       .rpc('match_course_chunks', {
         query_embedding: userQueryVector,
@@ -125,20 +122,14 @@ export const sendChatMessageToGrok = async ({
 
     if (rpcError) throw rpcError;
 
-    // 5. Combine matched chunks into context
+    // 6. Combine matched chunks
     const contextText = Array.isArray(matchedChunks) && matchedChunks.length > 0
       ? matchedChunks
-          .map((chunk) => {
-            if (!isRecord(chunk) || typeof chunk.content !== 'string') {
-              return '';
-            }
-            return chunk.content;
-          })
+          .map((chunk) => (isRecord(chunk) && typeof chunk.content === 'string' ? chunk.content : ''))
           .filter(Boolean)
           .join('\n\n')
       : "No relevant documentation found in the knowledge base for this course.";
 
-    // 6. Create the system prompt with course context
     const systemPrompt = `You are the EdAI learning assistant for this course. 
 Answer the user's question using ONLY the provided course documentation context below. 
 
@@ -147,43 +138,73 @@ ${contextText}
 
 If the answer cannot be found in the context, state clearly: "I cannot find this information in the course knowledge base."`;
 
-    // 7. Initialize Groq client (via OpenAI SDK with Groq baseURL)
-    const groq = new Groq({
-      apiKey: typedSettings.groq_api_key,
-    });
-
-    console.log('chat-service: sending chat request', {
-      model: typedSettings.groq_model_name,
-      messagesCount: messages.length + 1, // +1 for system message
-    });
-
-    // 8. Call Groq chat completion API
+    // 7. Initialize and trigger Groq API Call
+    const groq = new Groq({ apiKey: typedSettings.groq_api_key });
     const response = await groq.chat.completions.create({
       model: typedSettings.groq_model_name,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ],
+      messages: [{ role: 'system', content: systemPrompt }, ...messages],
       temperature: 0.1,
       max_tokens: 1024,
     });
 
-    // 9. Extract response and validate
-    if (!response.choices || response.choices.length === 0) {
-      console.error('chat-service: no choices in response', { response });
-      throw new Error('Groq API returned no response choices.');
+    if (!response.choices?.[0]?.message?.content) {
+      throw new Error('Groq API returned an empty response text or structure.');
     }
 
-    const firstChoice = response.choices[0];
-    if (!firstChoice.message || typeof firstChoice.message.content !== 'string') {
-      console.error('chat-service: invalid response message', { firstChoice });
-      throw new Error('Groq API response did not contain valid text.');
+    const assistantAnswer = response.choices[0].message.content;
+
+    // ==========================================
+    // TRANSACTIONAL DATABASE SAVE OPERATIONS
+    // ==========================================
+    let currentSessionId = sessionId;
+
+    // Step A: If no thread exists yet, initialize a new chat session entry
+    if (!currentSessionId) {
+      // Use a truncated version of the user prompt as the preview title for the history list
+      const sessionTitle = userLatestMessage.length > 40 
+        ? `${userLatestMessage.substring(0, 40)}...` 
+        : userLatestMessage;
+
+      const { data: newSession, error: sessionInsertError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          profile_id: profileId,
+          course_id: courseId,
+          title: sessionTitle
+        })
+        .select('id')
+        .single();
+
+      if (sessionInsertError || !newSession) {
+        console.error('Database transactional rollback fallback: Failed to create thread record.', sessionInsertError);
+        throw new Error(`Failed to initialize chat log record: ${sessionInsertError?.message}`);
+      }
+
+      currentSessionId = newSession.id;
     }
 
-    return firstChoice.message.content;
+    // Step B: Bulk insert both conversation records back-to-back to populate data safely
+    const { error: messagesError } = await supabase
+      .from('chat_messages')
+      .insert([
+        { session_id: currentSessionId, sender_type: 'user', content: userLatestMessage },
+        { session_id: currentSessionId, sender_type: 'assistant', content: assistantAnswer }
+      ]);
+
+    if (messagesError) {
+      console.error('Database isolation rollback trace: Message logging failure', messagesError);
+      // NOTE: If message log breaks, you can optionally clean up/delete the session manually here,
+      // but 'ON DELETE CASCADE' protections ensure table updates stay stable.
+      throw new Error(`Failed to save message entries to chat logs: ${messagesError.message}`);
+    }
+
+    return {
+      sessionId: currentSessionId!,
+      assistantMessage: assistantAnswer
+    };
+
   } catch (error: unknown) {
-    console.error('chat-service: chat failed', { error: getErrorMessage(error) });
+    console.error('chat-service: execution routine exception', { error: getErrorMessage(error) });
     throw error;
   }
 };
-

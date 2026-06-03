@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/useAuth";
 import { globalStyles } from "@/styles/global";
 import { sendChatMessageToGrok } from "@/utils/chat-service";
 import { ComponentProps, useRef, useState } from "react";
@@ -26,6 +27,7 @@ export default function Chat({
   clientId,
   courseId,
 }: Props) {
+  const { profile } = useAuth();
   const flatListRef = useRef<FlatList>(null);
 
   const [inputText, setInputText] = useState("");
@@ -55,9 +57,10 @@ export default function Chat({
     // 4. Send to AI
     setLoading(true);
     try {
-      const aiAnswer = await sendChatMessageToGrok({
+      const { assistantMessage: aiAnswer } = await sendChatMessageToGrok({
         clientId,
         courseId,
+        profileId: profile?.id || "",
         messages: nextMessages.map(({ content, role }) => ({ content, role })),
       });
 
