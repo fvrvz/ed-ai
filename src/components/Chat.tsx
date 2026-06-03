@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { globalStyles } from "@/styles/global";
 import { sendChatMessageToGrok } from "@/utils/chat-service";
+import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useRef, useState } from "react";
 import {
   FlatList,
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import ChatBubble from "./ChatBubble";
 import Title from "./Title";
 
@@ -85,10 +85,11 @@ export default function Chat({
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
+    <View style={globalStyles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        style={{ flex: 1 }}
       >
         <Title>Chat</Title>
 
@@ -112,7 +113,7 @@ export default function Chat({
             </View>
           )}
           inverted
-          style={{ marginVertical: 30 }}
+          style={{ marginVertical: 8, flex: 1 }}
           keyExtractor={(item) => item.id}
         />
 
@@ -121,7 +122,7 @@ export default function Chat({
             style={styles.input}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Message ChatGPT..."
+            placeholder="Enter message..."
             placeholderTextColor="#9ca3af"
             editable={!loading}
           />
@@ -130,11 +131,11 @@ export default function Chat({
             onPress={sendMessage}
             disabled={loading}
           >
-            <Text style={styles.sendText}>{loading ? "..." : "Send"}</Text>
+            <Ionicons name="send" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
   listContainer: { paddingHorizontal: 16, paddingVertical: 12 },
   inputContainer: {
     flexDirection: "row",
-    padding: 12,
+    paddingVertical: 8,
   },
   input: {
     flex: 1,
@@ -156,9 +157,9 @@ const styles = StyleSheet.create({
   sendButton: {
     justifyContent: "center",
     marginLeft: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     backgroundColor: "#10b981",
-    borderRadius: 24,
+    borderRadius: 50,
   },
   sendButtonDisabled: {
     backgroundColor: "#6b7280",

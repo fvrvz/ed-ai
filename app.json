@@ -8,7 +8,8 @@
     "scheme": "edai",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon/Assets/profile.png",
+      "bundleIdentifier": "com.fvrvz.edai"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundImage": "./assets/expo.icon/Assets/default.png",
         "monochromeImage": "./assets/expo.icon/Assets/default.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.fvrvz.edai"
     },
     "web": {
       "output": "static",
@@ -29,7 +31,7 @@
         "expo-splash-screen",
         {
           "android": {
-            "image": "./assets/profile.png",
+            "image": "./assets/expo.icon/Assets/profile.png",
             "imageWidth": 76
           }
         }
@@ -38,7 +40,8 @@
       "expo-image",
       "expo-status-bar",
       "expo-web-browser",
-      "expo-asset"
+      "expo-asset",
+      "react-native-enriched-markdown"
     ],
     "experiments": {
       "typedRoutes": true,
