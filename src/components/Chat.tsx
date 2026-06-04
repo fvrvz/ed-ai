@@ -261,9 +261,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: "#1c1c1e",
-    zIndex: 20, // Forces sidebar to stack over everything else
-    paddingTop: 50, // Pushes elements safely past status bars
+    backgroundColor: "#efefef",
+    zIndex: 20,
+    paddingTop: 20,
     borderRightWidth: 1,
     borderRightColor: "#2c2c2e",
     elevation: 5, // Android shadows fallback
@@ -271,31 +271,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-  },
-  sidebarHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2c2c2e",
-  },
-  sidebarTitle: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  sessionList: {
-    padding: 12,
-    gap: 8,
-  },
-  sessionItem: {
-    padding: 14,
-    borderRadius: 8,
-  },
-  activeSession: {
-    backgroundColor: "#2c2c2e",
-  },
-  sessionText: {
-    color: "#ffffff",
-    fontSize: 15,
   },
 });

@@ -1,13 +1,20 @@
 import { colors } from "@/styles/global";
+import { timeOptions } from "@/types/chat";
 import { ChatMessage } from "@/utils/chat-service";
-import { Linking, StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import { EnrichedMarkdownText } from "react-native-enriched-markdown";
 
 type Props = ChatMessage & {
   id: string;
+  created_at?: string;
 };
 
-export default function ChatBubble({ id, content: message, role }: Props) {
+export default function ChatBubble({
+  id,
+  content: message,
+  role,
+  created_at,
+}: Props) {
   const isUser = role === "user";
 
   return (
@@ -37,6 +44,7 @@ export default function ChatBubble({ id, content: message, role }: Props) {
             list: {
               color: "#fff",
               markerColor: "#fff",
+              bulletColor: "#fff",
             },
             link: {
               color: "#fff",
@@ -49,6 +57,18 @@ export default function ChatBubble({ id, content: message, role }: Props) {
           }}
         />
       </View>
+      <Text
+        style={{
+          fontSize: 10,
+          color: colors.textSecondary,
+          marginHorizontal: 4,
+          alignSelf: "flex-end",
+        }}
+      >
+        {created_at
+          ? new Date(created_at).toLocaleTimeString(undefined, timeOptions)
+          : new Date(id).toLocaleTimeString(undefined, timeOptions)}
+      </Text>
     </View>
   );
 }

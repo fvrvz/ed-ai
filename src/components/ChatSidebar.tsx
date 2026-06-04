@@ -1,6 +1,7 @@
+import { colors } from "@/styles/global";
 import { ChatSession } from "@/types/chat";
 import { getChatSessions } from "@/utils/db";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   FlatList,
@@ -17,6 +18,11 @@ type Props = {
 };
 
 export default function ChatSidebar({ profileId, courseId }: Props) {
+  const router = useRouter();
+  const { sessionId: activeSessionId } = useLocalSearchParams<{
+    sessionId: string;
+  }>();
+
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
 
@@ -41,6 +47,10 @@ export default function ChatSidebar({ profileId, courseId }: Props) {
     }, []),
   );
 
+  function handleSessionPress(sessionId: string) {
+    router.push(`/courses/${courseId}/chat/${sessionId}`);
+  }
+
   return (
     <View style={styles.sidebar}>
       <Title style={styles.sidebarTitle}>Conversations</Title>
@@ -49,8 +59,16 @@ export default function ChatSidebar({ profileId, courseId }: Props) {
         data={sessions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.sessionItem}>
-            <Text style={styles.sessionText}>
+          <TouchableOpacity
+            style={styles.sessionItem}
+            onPress={() => handleSessionPress(item.id)}
+          >
+            <Text
+              style={[
+                styles.sessionText,
+                item.id === activeSessionId && styles.activeSession,
+              ]}
+            >
               {item.title || "Untitled Conversation"}
             </Text>
           </TouchableOpacity>
@@ -71,29 +89,26 @@ export default function ChatSidebar({ profileId, courseId }: Props) {
 const styles = StyleSheet.create({
   sidebar: {
     paddingHorizontal: 20,
-  },
-  sidebarHeader: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#2c2c2e",
-    color: "#ffffff",
+    flex: 1,
   },
   sidebarTitle: {
-    color: "#ffffff",
     fontSize: 20,
     fontWeight: "bold",
+    marginBottom: 20,
   },
   sessionList: {
-    gap: 8,
+    flex: 1,
   },
   sessionItem: {
-    marginVertical: 14,
+    marginVertical: 5,
     borderRadius: 8,
+    paddingVertical: 8,
+    color: colors.textSecondary,
   },
   activeSession: {
-    backgroundColor: "#2c2c2e",
+    color: colors.primary,
   },
   sessionText: {
-    color: "#ffffff",
     fontSize: 15,
   },
 });
