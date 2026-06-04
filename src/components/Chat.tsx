@@ -29,6 +29,7 @@ type Props = {
   messages?: ComponentProps<typeof ChatBubble>[];
   clientId: string;
   courseId: string;
+  sessionId?: string;
 };
 
 // 1. Get the screen width to calculate side positioning
@@ -39,6 +40,7 @@ export default function Chat({
   messages: msgs = [],
   clientId,
   courseId,
+  sessionId = undefined,
 }: Props) {
   const { profile } = useAuth();
   const flatListRef = useRef<FlatList>(null);
@@ -84,6 +86,7 @@ export default function Chat({
       id: Date.now().toString(),
       content: inputText,
       role: "user",
+      created_at: new Date().toISOString(),
     };
 
     const nextMessages = [newMessage, ...messages];
@@ -104,10 +107,16 @@ export default function Chat({
         courseId,
         profileId: profile?.id || "",
         messages: nextMessages.map(({ content, role }) => ({ content, role })),
+        sessionId,
       });
 
       setMessages((prev) => [
-        { role: "assistant", content: aiAnswer, id: Date.now().toString() },
+        {
+          role: "assistant",
+          content: aiAnswer,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+        },
         ...prev,
       ]);
 

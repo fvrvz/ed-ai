@@ -6,7 +6,7 @@ import { EnrichedMarkdownText } from "react-native-enriched-markdown";
 
 type Props = ChatMessage & {
   id: string;
-  created_at?: string;
+  created_at: string;
 };
 
 export default function ChatBubble({
@@ -65,9 +65,7 @@ export default function ChatBubble({
           alignSelf: "flex-end",
         }}
       >
-        {created_at
-          ? new Date(created_at).toLocaleTimeString(undefined, timeOptions)
-          : new Date(id).toLocaleTimeString(undefined, timeOptions)}
+        {new Date(created_at).toLocaleTimeString(undefined, timeOptions)}
       </Text>
     </View>
   );

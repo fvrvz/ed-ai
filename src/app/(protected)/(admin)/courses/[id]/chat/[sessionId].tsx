@@ -52,6 +52,7 @@ export default function ChatWithSeesionScreen() {
       clientId={profile?.client_id || ""}
       courseId={id}
       messages={messages}
+      sessionId={sessionId}
     />
   );
 }
