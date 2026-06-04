@@ -170,10 +170,6 @@ export default function CourseDetailScreen() {
     }
   }
 
-  function handleChatPress() {
-    router.navigate(`/(protected)/(admin)/courses/${id}/chat`);
-  }
-
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -211,7 +207,15 @@ export default function CourseDetailScreen() {
         </View>
       )}
 
-      <View style={{ marginTop: 32 }}>
+      <View
+        style={{
+          marginTop: 32,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          alignSelf: "flex-end",
+        }}
+      >
         <TouchableOpacity
           style={{
             padding: 5,
@@ -226,7 +230,26 @@ export default function CourseDetailScreen() {
             paddingHorizontal: 12,
             paddingVertical: 8,
           }}
-          onPress={handleChatPress}
+          onPress={() => router.push(`/courses/${id}/discussion`)}
+        >
+          <Ionicons name="mail-outline" size={20} />
+          <Text>Discussions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            padding: 5,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            flexDirection: "row",
+            gap: 5,
+            alignItems: "center",
+            width: "auto",
+            alignSelf: "flex-end",
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+          onPress={() => router.push(`/courses/${id}/chat`)}
         >
           <Ionicons name="chatbubble-outline" size={20} />
           <Text>Chat</Text>

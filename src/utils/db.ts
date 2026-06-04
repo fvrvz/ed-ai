@@ -559,8 +559,7 @@ export async function getDiscussionMessages(
             *,
             profile:profiles (
                 first_name,
-                last_name,
-                role
+                last_name
             )
         `)
         .eq<keyof DiscussionMessage>("discussion_id", discussionId)
@@ -604,11 +603,17 @@ export async function getDiscussions(
 }
 
 export async function addDiscussionMessage(
-    payload: Omit<DiscussionMessage, keyof Base>,
+    payload: Omit<DiscussionMessage, keyof Base | "profile">,
 ): Promise<DiscussionMessage> {
     const { data, error } = await supabase.from("discussion_messages").insert(
         payload,
-    ).select().single();
+    ).select(`
+            *,
+            profile:profiles (
+                first_name,
+                last_name
+            )
+        `).single();
     if (error) {
         throw new Error(`Error adding discussion message: ${error.message}`);
     }

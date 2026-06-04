@@ -25,12 +25,6 @@ export default function CoursesLayout() {
           title: "Course Details",
         }}
       />
-      {/* <Stack.Screen
-        name="chat"
-        options={{
-          title: "Chat",
-        }}
-      /> */}
     </Stack>
   );
 }

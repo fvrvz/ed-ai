@@ -4,6 +4,7 @@ type BadgeProps = {
   text: string;
   color?: string;
   variant?: "success" | "error" | "warning" | "info";
+  outline?: boolean;
 };
 
 export function getBackgroundColor(
@@ -25,18 +26,35 @@ export function getBackgroundColor(
   }
 }
 
-export default function Badge({ text, color, variant }: BadgeProps) {
+export default function Badge({
+  text,
+  color,
+  variant,
+  outline = false,
+}: BadgeProps) {
+  const currentColor = getBackgroundColor(color, variant);
+
   return (
     <View
-      style={{
-        backgroundColor: getBackgroundColor(color, variant),
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-        alignSelf: "flex-start",
-      }}
+      style={[
+        {
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: 4,
+          alignSelf: "flex-start",
+        },
+        outline
+          ? { borderWidth: 1, borderColor: currentColor }
+          : { backgroundColor: currentColor },
+      ]}
     >
-      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>
+      <Text
+        style={{
+          color: outline ? currentColor : "#fff",
+          fontSize: 12,
+          fontWeight: "bold",
+        }}
+      >
         {text}
       </Text>
     </View>
