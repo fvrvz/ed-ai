@@ -29,6 +29,7 @@ type Props = {
   messages?: ComponentProps<typeof ChatBubble>[];
   clientId: string;
   courseId: string;
+  sessionId?: string;
 };
 
 // 1. Get the screen width to calculate side positioning
@@ -39,6 +40,7 @@ export default function Chat({
   messages: msgs = [],
   clientId,
   courseId,
+  sessionId = undefined,
 }: Props) {
   const { profile } = useAuth();
   const flatListRef = useRef<FlatList>(null);
@@ -84,6 +86,7 @@ export default function Chat({
       id: Date.now().toString(),
       content: inputText,
       role: "user",
+      created_at: new Date().toISOString(),
     };
 
     const nextMessages = [newMessage, ...messages];
@@ -104,10 +107,16 @@ export default function Chat({
         courseId,
         profileId: profile?.id || "",
         messages: nextMessages.map(({ content, role }) => ({ content, role })),
+        sessionId,
       });
 
       setMessages((prev) => [
-        { role: "assistant", content: aiAnswer, id: Date.now().toString() },
+        {
+          role: "assistant",
+          content: aiAnswer,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+        },
         ...prev,
       ]);
 
@@ -159,9 +168,22 @@ export default function Chat({
               <ChatBubble {...item} />
             </View>
           )}
-          inverted
+          inverted={messages.length > 0}
           style={{ marginVertical: 8, flex: 1 }}
           keyExtractor={(item) => item.id}
+          ListEmptyComponent={() => (
+            <Text style={{ color: "#6b7280" }}>
+              No messages yet. Start the conversation!
+            </Text>
+          )}
+          contentContainerStyle={
+            messages.length === 0 && {
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }
+          }
+          ref={flatListRef}
         />
 
         <View style={styles.inputContainer}>
@@ -261,9 +283,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: "#1c1c1e",
-    zIndex: 20, // Forces sidebar to stack over everything else
-    paddingTop: 50, // Pushes elements safely past status bars
+    backgroundColor: "#efefef",
+    zIndex: 20,
+    paddingTop: 20,
     borderRightWidth: 1,
     borderRightColor: "#2c2c2e",
     elevation: 5, // Android shadows fallback
@@ -271,31 +293,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-  },
-  sidebarHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2c2c2e",
-  },
-  sidebarTitle: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  sessionList: {
-    padding: 12,
-    gap: 8,
-  },
-  sessionItem: {
-    padding: 14,
-    borderRadius: 8,
-  },
-  activeSession: {
-    backgroundColor: "#2c2c2e",
-  },
-  sessionText: {
-    color: "#ffffff",
-    fontSize: 15,
   },
 });
