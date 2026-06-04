@@ -1,6 +1,7 @@
 import { colors } from "@/styles/global";
 import { ChatSession } from "@/types/chat";
 import { getChatSessions } from "@/utils/db";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -54,13 +55,42 @@ export default function ChatSidebar({ profileId, courseId }: Props) {
   return (
     <View style={styles.sidebar}>
       <Title style={styles.sidebarTitle}>Conversations</Title>
+      <TouchableOpacity
+        style={[
+          styles.sessionItem,
+          {
+            marginVertical: 10,
+            flexDirection: "row",
+            alignItems: "center",
+          },
+        ]}
+        onPress={() => router.push(`/courses/${courseId}/chat`)}
+      >
+        <Ionicons name="create-outline" size={16} style={{ marginRight: 6 }} />
+        <Text style={styles.sessionText}>New</Text>
+      </TouchableOpacity>
+
+      <Text
+        style={{
+          marginTop: 12,
+          fontSize: 16,
+          fontWeight: "bold",
+        }}
+      >
+        Recent
+      </Text>
 
       <FlatList
         data={sessions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.sessionItem}
+            style={[
+              styles.sessionItem,
+              item.id === activeSessionId && {
+                backgroundColor: colors.primary + "20",
+              },
+            ]}
             onPress={() => handleSessionPress(item.id)}
           >
             <Text
@@ -69,7 +99,7 @@ export default function ChatSidebar({ profileId, courseId }: Props) {
                 item.id === activeSessionId && styles.activeSession,
               ]}
             >
-              {item.title || "Untitled Conversation"}
+              {item.title.toLocaleLowerCase() || "Untitled Conversation"}
             </Text>
           </TouchableOpacity>
         )}
@@ -94,16 +124,14 @@ const styles = StyleSheet.create({
   sidebarTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
   },
   sessionList: {
     flex: 1,
   },
   sessionItem: {
-    marginVertical: 5,
     borderRadius: 8,
-    paddingVertical: 8,
     color: colors.textSecondary,
+    padding: 8,
   },
   activeSession: {
     color: colors.primary,

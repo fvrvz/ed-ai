@@ -168,9 +168,22 @@ export default function Chat({
               <ChatBubble {...item} />
             </View>
           )}
-          inverted
+          inverted={messages.length > 0}
           style={{ marginVertical: 8, flex: 1 }}
           keyExtractor={(item) => item.id}
+          ListEmptyComponent={() => (
+            <Text style={{ color: "#6b7280" }}>
+              No messages yet. Start the conversation!
+            </Text>
+          )}
+          contentContainerStyle={
+            messages.length === 0 && {
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }
+          }
+          ref={flatListRef}
         />
 
         <View style={styles.inputContainer}>
