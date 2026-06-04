@@ -3,6 +3,7 @@ import { Base } from "@/types/base";
 import { ChatMessage, ChatSession } from "@/types/chat";
 import { Client } from "@/types/client";
 import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
+import { Discussion, DiscussionMessage } from "@/types/discussion";
 import { Document, DocumentChunk } from "@/types/document";
 import { SystemSettings } from "@/types/system-settings";
 import { supabase } from "./supabase";
@@ -547,4 +548,129 @@ export async function getChatMessagesBySessionId(
         );
     }
     return data;
+}
+
+export async function getDiscussionMessages(
+    discussionId: string,
+): Promise<DiscussionMessage[]> {
+    const { data, error } = await supabase
+        .from("discussion_messages")
+        .select(`
+            *,
+            profile:profiles (
+                first_name,
+                last_name,
+                role
+            )
+        `)
+        .eq<keyof DiscussionMessage>("discussion_id", discussionId)
+        .order<keyof DiscussionMessage>("created_at", { ascending: true });
+
+    if (error) {
+        throw new Error(`Error fetching discussion messages: ${error.message}`);
+    }
+    return data;
+}
+
+export async function getDiscussions(
+    options?: Partial<Discussion>,
+): Promise<Discussion[]> {
+    const query = supabase.from("discussions").select("*").order(
+        "created_at",
+        { ascending: false },
+    );
+
+    if (options?.id) {
+        query.eq("id", options.id);
+    }
+
+    if (options?.course_id) {
+        query.eq("course_id", options.course_id);
+    }
+
+    if (options?.user_id) {
+        query.eq("user_id", options.user_id);
+    }
+
+    if (options?.client_id) {
+        query.eq("client_id", options.client_id);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        throw new Error(`Error fetching discussions: ${error.message}`);
+    }
+    return data;
+}
+
+export async function addDiscussionMessage(
+    payload: Omit<DiscussionMessage, keyof Base>,
+): Promise<DiscussionMessage> {
+    const { data, error } = await supabase.from("discussion_messages").insert(
+        payload,
+    ).select().single();
+    if (error) {
+        throw new Error(`Error adding discussion message: ${error.message}`);
+    }
+    return data;
+}
+
+export async function createDiscussion(
+    payload: Omit<Discussion, keyof Base>,
+): Promise<Discussion> {
+    const { data, error } = await supabase.from("discussions").insert(payload)
+        .select().single();
+    if (error) {
+        throw new Error(`Error creating discussion: ${error.message}`);
+    }
+    return data;
+}
+
+export async function updateDiscussionStatus(
+    discussionId: string,
+    status: Discussion["status"],
+): Promise<Discussion> {
+    const { data, error } = await supabase
+        .from("discussions")
+        .update({ status })
+        .eq("id", discussionId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error updating discussion status: ${error.message}`);
+    }
+
+    return data;
+}
+
+export async function updateDiscussionMessage(
+    messageId: string,
+    content: string,
+): Promise<DiscussionMessage> {
+    const { data, error } = await supabase
+        .from("discussion_messages")
+        .update({ content })
+        .eq("id", messageId)
+        .select()
+        .single();
+
+    if (error) {
+        throw new Error(`Error updating discussion message: ${error.message}`);
+    }
+
+    return data;
+}
+
+export async function deleteDiscussionMessage(
+    messageId: string,
+): Promise<void> {
+    const { error } = await supabase
+        .from("discussion_messages")
+        .delete()
+        .eq("id", messageId);
+
+    if (error) {
+        throw new Error(`Error deleting discussion message: ${error.message}`);
+    }
 }
