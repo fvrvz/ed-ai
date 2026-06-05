@@ -520,6 +520,10 @@ export async function getChatSessions(
         query.eq("id", options.id);
     }
 
+    if (options?.client_id) {
+        query.eq("client_id", options.client_id);
+    }
+
     if (options?.course_id) {
         query.eq("course_id", options.course_id);
     }

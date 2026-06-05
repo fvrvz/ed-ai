@@ -16,9 +16,10 @@ import Title from "./Title";
 type Props = {
   profileId: string;
   courseId: string;
+  clientId: string;
 };
 
-export default function ChatSidebar({ profileId, courseId }: Props) {
+export default function ChatSidebar({ profileId, courseId, clientId }: Props) {
   const router = useRouter();
   const { sessionId: activeSessionId } = useLocalSearchParams<{
     sessionId: string;
@@ -33,6 +34,7 @@ export default function ChatSidebar({ profileId, courseId }: Props) {
       const data = await getChatSessions({
         profile_id: profileId,
         course_id: courseId,
+        client_id: clientId,
       });
       setSessions(data);
     } catch (error) {

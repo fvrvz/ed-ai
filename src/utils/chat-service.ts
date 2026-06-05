@@ -26,7 +26,7 @@ interface EmbeddingResponse {
   error?: string;
 }
 
-interface GrokChatPayload {
+interface GroqChatPayload {
   clientId: string;
   courseId: string;
   profileId: string; // Added: Needed to link historical threads
@@ -81,13 +81,13 @@ async function generateEmbeddingViaEdgeFunction(
 /**
  * Sends chat message to Groq AI with course context and persistently updates history.
  */
-export const sendChatMessageToGrok = async ({
+export const prompt = async ({
   clientId,
   courseId,
   profileId,
   sessionId,
   messages,
-}: GrokChatPayload): Promise<ChatServiceResponse> => {
+}: GroqChatPayload): Promise<ChatServiceResponse> => {
   try {
     // 1. Verify session token validity
     const { data: { session } } = await supabase.auth.getSession();
@@ -192,6 +192,7 @@ If the answer cannot be found in the context, state clearly: "I cannot find this
           profile_id: profileId,
           course_id: courseId,
           title: sessionTitle,
+          client_id: clientId,
         })
         .select("id")
         .single();

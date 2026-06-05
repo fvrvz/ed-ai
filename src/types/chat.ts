@@ -10,6 +10,7 @@ export interface ChatSession extends Base {
   title: string;
   course_id: string;
   profile_id: string;
+  client_id: string;
 }
 
 export const timeOptions = {

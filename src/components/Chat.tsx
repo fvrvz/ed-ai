@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { globalStyles } from "@/styles/global";
-import { sendChatMessageToGrok } from "@/utils/chat-service";
+import { prompt } from "@/utils/chat-service";
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useRef, useState } from "react";
 import {
@@ -102,7 +102,7 @@ export default function Chat({
     // 4. Send to AI
     setLoading(true);
     try {
-      const { assistantMessage: aiAnswer } = await sendChatMessageToGrok({
+      const { assistantMessage: aiAnswer } = await prompt({
         clientId,
         courseId,
         profileId: profile?.id || "",
@@ -212,7 +212,11 @@ export default function Chat({
       )}
 
       <Animated.View style={[styles.sidebar, animatedSidebarStyle]}>
-        <ChatSidebar courseId={courseId} profileId={profile?.id!} />
+        <ChatSidebar
+          courseId={courseId}
+          profileId={profile?.id!}
+          clientId={clientId}
+        />
       </Animated.View>
     </View>
   );
