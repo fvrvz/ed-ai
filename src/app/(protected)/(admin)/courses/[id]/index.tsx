@@ -55,6 +55,7 @@ export default function CourseDetailScreen() {
       return;
     }
 
+    setLoading(true);
     try {
       const data = await getCourseById(id);
       setCourse(data);
@@ -216,6 +217,9 @@ export default function CourseDetailScreen() {
           <Text style={{ fontSize: 18, fontWeight: "bold" }}>
             {course.title}
           </Text>
+          <Text style={{ color: colors.textSecondary }}>
+            {course?.description}
+          </Text>
           <Text>
             Created at: {new Date(course.created_at).toLocaleDateString()}
           </Text>
@@ -300,11 +304,27 @@ export default function CourseDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={{ marginTop: 32 }}>
-        <Title style={{ marginBottom: 5 }}>Course Content</Title>
-        <Text style={{ fontStyle: "italic", color: "#666" }}>
-          Description: {course?.description}
-        </Text>
+      <View style={{ marginTop: 8 }}>
+        <TouchableOpacity
+          style={{
+            padding: 5,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.secondary,
+            justifyContent: "center",
+            flexDirection: "row",
+            gap: 5,
+            alignItems: "center",
+            flexGrow: 1,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            backgroundColor: colors.secondary + "20",
+          }}
+          onPress={() => router.push(`/courses/${id}/assignments`)}
+        >
+          <Ionicons name="people-outline" size={20} color={colors.secondary} />
+          <Text style={{ color: colors.secondary }}>Check assignments</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{ marginTop: 32 }}>
@@ -444,6 +464,11 @@ export default function CourseDetailScreen() {
             </>
           )}
         </TouchableOpacity>
+      </View>
+
+      <View style={{ marginTop: 32 }}>
+        <Title style={{ marginBottom: 5 }}>Quiz</Title>
+        <Text style={{ fontStyle: "italic", color: "#666" }}>Description:</Text>
       </View>
     </View>
   );

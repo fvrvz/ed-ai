@@ -347,12 +347,18 @@ async function getAssignmentsForUser(userId: string): Promise<Assignment[]> {
 }
 
 export async function getAssignments(
-    filterOptions?: Omit<FilterOptions<Assignment>, "isActive">,
+    filterOptions?: Omit<FilterOptions<Assignment>, "isActive"> & {
+        courseId?: string;
+    },
 ): Promise<Assignment[]> {
     let query = supabase.from("course_assignments").select("*");
 
     if (filterOptions?.clientId) {
         query = query.eq("client_id", filterOptions.clientId);
+    }
+
+    if (filterOptions?.courseId) {
+        query = query.eq<keyof Assignment>("course_id", filterOptions.courseId);
     }
 
     if (filterOptions?.sortBy) {
