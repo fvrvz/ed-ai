@@ -1,11 +1,16 @@
 import { useAuth } from "@/hooks/useAuth";
-import { globalStyles } from "@/styles/global";
+import { colors, globalStyles } from "@/styles/global";
 import { Base } from "@/types/base";
 import { type Discussion } from "@/types/discussion";
-import { addDiscussionMessage, createDiscussion } from "@/utils/db";
+import {
+  addDiscussionMessage,
+  createDiscussion,
+  updateDiscussionStatus,
+} from "@/utils/db";
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   KeyboardAvoidingView,
@@ -23,6 +28,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import Alert from "./Alert";
 import Badge from "./Badge";
 import DiscussionSidebar from "./DiscussionSidebar";
 import MessageBubble from "./MessageBubble";
@@ -49,7 +55,7 @@ export default function Discussion({
   course_id: courseId,
   discussionId: discussionIdProp,
   title: titleProp,
-  status = "opened",
+  status: statusProp = "opened",
 }: Props) {
   const { profile } = useAuth();
   const flatListRef = useRef<FlatList>(null);
@@ -64,6 +70,7 @@ export default function Discussion({
   const [discussionId, setDiscussionId] = useState<string>(
     discussionIdProp || "",
   );
+  const [status, setStatus] = useState<"opened" | "closed">(statusProp);
 
   const translateX = useSharedValue(-SIDEBAR_WIDTH);
 
@@ -113,6 +120,7 @@ export default function Discussion({
         _discussionId = data.id;
         setDiscussionId(data.id);
         setTitle(data.title);
+        setStatus("opened");
       }
 
       const newMessage: Message = {
@@ -155,6 +163,24 @@ export default function Discussion({
     }
   };
 
+  async function toggleStatus() {
+    setLoading(true);
+    try {
+      let newStatus = status;
+      if (status === "opened") {
+        newStatus = "closed";
+      } else {
+        newStatus = "opened";
+      }
+      const data = await updateDiscussionStatus(discussionId, newStatus);
+      setStatus(data.status);
+    } catch (err) {
+      console.log("Unable to update discussion status");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <View style={globalStyles.container}>
       <KeyboardAvoidingView
@@ -178,10 +204,11 @@ export default function Discussion({
           </View>
           {discussionId && (
             <Badge
-              text={status.toUpperCase()}
               variant={status === "closed" ? "success" : "info"}
-              outline
-            />
+              type="outline"
+            >
+              {status.toUpperCase()}
+            </Badge>
           )}
         </View>
 
@@ -193,7 +220,7 @@ export default function Discussion({
 
         {loading && (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Thinking...</Text>
+            <ActivityIndicator size="small" />
           </View>
         )}
 
@@ -231,6 +258,13 @@ export default function Discussion({
           }}
         />
 
+        {status === "closed" && (
+          <Alert variant="info" style={{ marginVertical: 8 }}>
+            This discussion is marked as resolved, if you are not satisfied you
+            can reopen.
+          </Alert>
+        )}
+
         <View
           style={[
             styles.inputContainer,
@@ -251,48 +285,67 @@ export default function Discussion({
             />
           )}
 
-          <View
-            style={
-              discussionId ? styles.rowChatWrapper : { width: "100%", gap: 8 }
-            }
-          >
-            <TextInput
-              style={[
-                styles.input,
-                discussionId ? styles.inputActiveChat : styles.inputNewThread,
-              ]}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder={
-                !discussionId
-                  ? "Enter your first message..."
-                  : "Type a message..."
-              }
-              placeholderTextColor="#9ca3af"
-              editable={!loading}
-              multiline
-              numberOfLines={!discussionId ? 4 : 1}
-              textAlignVertical={!discussionId ? "top" : "center"}
-            />
+          <View style={{ width: "100%", gap: 8 }}>
+            {status === "opened" && (
+              <TextInput
+                style={[styles.input, styles.inputNewThread]}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder={
+                  !discussionId
+                    ? "Enter your first message..."
+                    : "Type a message..."
+                }
+                placeholderTextColor="#9ca3af"
+                editable={!loading}
+                multiline
+                numberOfLines={!discussionId ? 4 : 1}
+                textAlignVertical={!discussionId ? "top" : "center"}
+              />
+            )}
 
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                loading && styles.sendButtonDisabled,
-                !discussionId
-                  ? styles.sendButtonNewThread
-                  : styles.sendButtonActiveChat,
-              ]}
-              onPress={sendMessage}
-              disabled={loading || (!discussionId && !title.trim())} // Block accidental empty threads
+            <View
+              style={[{ gap: 8 }, discussionId && { flexDirection: "row" }]}
             >
-              <Ionicons name="send" size={18} color="#fff" />
-              {!discussionId && (
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                  Create Discussion
-                </Text>
+              {discussionId && (
+                <TouchableOpacity
+                  style={[
+                    styles.sendButton,
+                    loading && styles.sendButtonDisabled,
+                    styles.sendButtonNewThread,
+                    {
+                      backgroundColor:
+                        status === "closed" ? colors.success : colors.error,
+                      flex: 1,
+                    },
+                  ]}
+                  onPress={toggleStatus}
+                  disabled={loading || (!discussionId && !title.trim())} // Block accidental empty threads
+                >
+                  <Ionicons name="open-outline" size={18} color="#fff" />
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                    {status === "closed" ? "Re-open Discussion" : "Close"}
+                  </Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+              {status !== "closed" && (
+                <TouchableOpacity
+                  style={[
+                    styles.sendButton,
+                    loading && styles.sendButtonDisabled,
+                    styles.sendButtonNewThread,
+                    discussionId && { flex: 2.5 },
+                  ]}
+                  onPress={sendMessage}
+                  disabled={loading || (!discussionId && !title.trim())} // Block accidental empty threads
+                >
+                  <Ionicons name="send" size={18} color="#fff" />
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                    {!discussionId ? "Create Discussion" : "Send"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -384,11 +437,9 @@ const styles = StyleSheet.create({
   },
   sendText: { color: "#fff", fontWeight: "600" },
   loadingContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#1f2937",
-    borderLeftWidth: 4,
-    borderLeftColor: "#10b981",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingText: {
     color: "#10b981",

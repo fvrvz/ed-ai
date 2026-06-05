@@ -1,24 +1,12 @@
 import { useAuth } from "@/hooks/useAuth";
 import { colors } from "@/styles/global";
+import { RoleVariant } from "@/types/auth";
 import { timeOptions } from "@/types/chat";
 import { DiscussionMessage } from "@/types/discussion";
 import { StyleSheet, Text, View } from "react-native";
 import Badge from "./Badge";
 
 type Props = Omit<DiscussionMessage, "updated_at"> & { updated_at?: string };
-
-function getRoleBg(role: Props["role"]): string {
-  switch (role) {
-    case "edai":
-      return colors.primary;
-    case "admin":
-      return colors.warning;
-    case "super_admin":
-      return colors.secondary;
-    default:
-      return colors.success;
-  }
-}
 
 export default function MessageBubble({
   id,
@@ -50,7 +38,9 @@ export default function MessageBubble({
           <Text style={{ color: colors.textSecondary }}>
             {first_name} {last_name}
           </Text>
-          <Badge text={role.toUpperCase()} color={getRoleBg(role)} />
+          <Badge variant={RoleVariant[role]} type="solid">
+            {role.toUpperCase()}
+          </Badge>
         </View>
       </View>
       <Text

@@ -34,3 +34,11 @@ export interface AuthContextValue {
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }
+
+export const RoleVariant = {
+  admin: "warning",
+  super_admin: "error",
+  member: "info",
+  edai: "success",
+  assistant: "success",
+} as const;

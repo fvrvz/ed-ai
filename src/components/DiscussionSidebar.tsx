@@ -112,10 +112,9 @@ export default function DiscussionSidebar({
               {item.title.toLocaleLowerCase() || "Untitled Discussion"}
             </Text>
             <View style={{ flexShrink: 9 }}>
-              <Badge
-                text={item.status.toUpperCase()}
-                variant={item.status === "closed" ? "success" : "info"}
-              />
+              <Badge variant={item.status === "closed" ? "success" : "info"}>
+                {item.status.toUpperCase()}
+              </Badge>
             </View>
           </TouchableOpacity>
         )}

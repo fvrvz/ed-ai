@@ -1,7 +1,6 @@
-import { PropsWithChildren } from "react";
 import { StyleProp, Text, TextStyle } from "react-native";
 
-type TitleProps = PropsWithChildren & { style?: StyleProp<TextStyle> };
+type TitleProps = { style?: StyleProp<TextStyle>; children: string };
 
 export default function Title({ children, style }: TitleProps) {
   return (

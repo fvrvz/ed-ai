@@ -1,7 +1,8 @@
 import Discussion from "@/components/Discussion";
 import MessageBubble from "@/components/MessageBubble";
 import { useAuth } from "@/hooks/useAuth";
-import { getDiscussionMessages } from "@/utils/db";
+import { Discussion as DiscussionType } from "@/types/discussion";
+import { getDiscussionMessages, getDiscussions } from "@/utils/db";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ComponentProps, useCallback, useState } from "react";
 import { Text } from "react-native";
@@ -16,6 +17,7 @@ export default function DiscussionWithIdScreen() {
   const [messages, setMessages] = useState<
     ComponentProps<typeof MessageBubble>[]
   >([]);
+  const [discussion, setDiscussion] = useState<DiscussionType>();
   const [loading, setLoading] = useState(true);
 
   async function loadMessages() {
@@ -23,8 +25,12 @@ export default function DiscussionWithIdScreen() {
       setLoading(true);
       const response = await getDiscussionMessages(discussionId);
       setMessages(response);
+      const [data] = await getDiscussions({
+        id: discussionId,
+      });
+      setDiscussion(data);
     } catch (error) {
-      console.error("Error loading chat messages:", error);
+      console.error("Error loading discussion:", error);
     } finally {
       setLoading(false);
     }
@@ -37,7 +43,7 @@ export default function DiscussionWithIdScreen() {
   );
 
   if (loading) {
-    return <Text>Loading chat messages...</Text>;
+    return <Text>Loading discussion...</Text>;
   }
 
   return (
@@ -47,6 +53,8 @@ export default function DiscussionWithIdScreen() {
       user_id={profile?.id || ""}
       discussionId={discussionId}
       messages={messages}
+      title={discussion?.title}
+      status={discussion?.status}
     />
   );
 }
