@@ -11,6 +11,14 @@ export const colors = {
   warning: "#FF9500",
 };
 
+export const VariantMap = {
+  success: colors.success,
+  warning: colors.warning,
+  error: colors.error,
+  info: colors.primary,
+  default: colors.textSecondary,
+} as const;
+
 export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,

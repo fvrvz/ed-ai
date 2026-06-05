@@ -19,7 +19,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { ComponentProps, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -30,18 +30,11 @@ import {
   View,
 } from "react-native";
 
-function getEmbeddingVariant(
-  status: Document["embedding_status"],
-): ComponentProps<typeof Badge>["variant"] {
-  switch (status) {
-    case "completed":
-      return "success";
-    case "processing":
-      return "warning";
-    default:
-      return "error";
-  }
-}
+const EmbeddingVariant = {
+  completed: "success",
+  processing: "info",
+  failed: "error",
+} as const;
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -170,10 +163,6 @@ export default function CourseDetailScreen() {
     }
   }
 
-  function handleChatPress() {
-    router.navigate(`/(protected)/(admin)/courses/${id}/chat`);
-  }
-
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -204,14 +193,21 @@ export default function CourseDetailScreen() {
           <Text>
             Last updated: {new Date(course.updated_at).toLocaleDateString()}
           </Text>
-          <Badge
-            text={course.is_published ? "Published" : "Draft"}
-            color={course.is_published ? "green" : "gray"}
-          />
+          <Badge color={course.is_published ? "green" : "gray"}>
+            {course.is_published ? "Published" : "Draft"}
+          </Badge>
         </View>
       )}
 
-      <View style={{ marginTop: 32 }}>
+      <View
+        style={{
+          marginTop: 32,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          alignSelf: "flex-end",
+        }}
+      >
         <TouchableOpacity
           style={{
             padding: 5,
@@ -226,7 +222,26 @@ export default function CourseDetailScreen() {
             paddingHorizontal: 12,
             paddingVertical: 8,
           }}
-          onPress={handleChatPress}
+          onPress={() => router.push(`/courses/${id}/discussion`)}
+        >
+          <Ionicons name="mail-outline" size={20} />
+          <Text>Discussions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            padding: 5,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            flexDirection: "row",
+            gap: 5,
+            alignItems: "center",
+            width: "auto",
+            alignSelf: "flex-end",
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+          onPress={() => router.push(`/courses/${id}/chat`)}
         >
           <Ionicons name="chatbubble-outline" size={20} />
           <Text>Chat</Text>
@@ -315,9 +330,12 @@ export default function CourseDetailScreen() {
                   >
                     <Text>Embedding:</Text>
                     <Badge
-                      text={item.embedding_status.toUpperCase()}
-                      variant={getEmbeddingVariant(item.embedding_status)}
-                    />
+                      variant={
+                        EmbeddingVariant[item.embedding_status] || "default"
+                      }
+                    >
+                      {item.embedding_status.toUpperCase()}
+                    </Badge>
                   </View>
                 </View>
                 <View

@@ -1,4 +1,4 @@
-import { Profile } from "@/types/auth";
+import { Profile, RoleVariant } from "@/types/auth";
 import { getFullName } from "@/utils/profile.helper";
 import {
   StyleProp,
@@ -12,17 +12,6 @@ import Badge from "./Badge";
 
 type UserCardProps = Profile & { style?: StyleProp<ViewStyle> };
 
-export function getUserRoleBadgeVariant(role: Profile["role"]) {
-  switch (role) {
-    case "admin":
-      return "success";
-    case "super_admin":
-      return "error";
-    default:
-      return "info";
-  }
-}
-
 export default function UserCard({ style, ...profile }: UserCardProps) {
   const name = getFullName(profile);
   const { email, role, is_active, phone } = profile;
@@ -33,10 +22,7 @@ export default function UserCard({ style, ...profile }: UserCardProps) {
         <Text style={{ fontSize: 18, fontWeight: "bold" }}>{name}</Text>
         <Text style={{ color: "#666" }}>{email}</Text>
         <Text style={{ color: "#666" }}>{phone ?? "N/A"}</Text>
-        <Badge
-          text={role.toUpperCase()}
-          variant={getUserRoleBadgeVariant(role)}
-        />
+        <Badge variant={RoleVariant[role]}>{role.toUpperCase()}</Badge>
       </View>
       <Switch
         value={is_active}

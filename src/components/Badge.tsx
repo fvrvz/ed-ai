@@ -1,44 +1,50 @@
-import { Text, View } from "react-native";
+import { VariantMap } from "@/styles/global";
+import { StyleSheet, Text, View } from "react-native";
 
 type BadgeProps = {
-  text: string;
+  children: string;
   color?: string;
-  variant?: "success" | "error" | "warning" | "info";
+  variant?: "success" | "error" | "warning" | "info" | "default";
+  type?: "outline" | "solid" | "default";
 };
 
-export function getBackgroundColor(
-  color?: string,
-  variant?: BadgeProps["variant"],
-) {
-  if (color) return color;
-  switch (variant) {
-    case "success":
-      return "#4CAF50";
-    case "error":
-      return "#F44336";
-    case "warning":
-      return "#FF9800";
-    case "info":
-      return "#2196F3";
-    default:
-      return "#4CAF50";
-  }
-}
+export default function Badge({
+  children,
+  color,
+  variant = "default",
+  type = "default",
+}: BadgeProps) {
+  const currentColor = color || VariantMap[variant];
+  const bgColor = type === "default" ? currentColor + "20" : currentColor;
 
-export default function Badge({ text, color, variant }: BadgeProps) {
   return (
     <View
-      style={{
-        backgroundColor: getBackgroundColor(color, variant),
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-        alignSelf: "flex-start",
-      }}
+      style={[
+        styles.container,
+        type !== "outline" && { backgroundColor: bgColor },
+        type !== "solid" && { borderWidth: 0.5, borderColor: currentColor },
+      ]}
     >
-      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>
-        {text}
+      <Text
+        style={[
+          styles.text,
+          {
+            color: type === "solid" ? "#fff" : currentColor,
+          },
+        ]}
+      >
+        {children}
       </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    alignSelf: "flex-start",
+  },
+  text: { fontSize: 12, fontWeight: "bold" },
+});

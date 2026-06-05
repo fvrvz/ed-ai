@@ -66,10 +66,9 @@ export default function CoursesScreen() {
                 {item.title}
               </Text>
               <Text>{item.description}</Text>
-              <Badge
-                text={item.is_published ? "Published" : "Not Published"}
-                color={item.is_published ? "green" : "red"}
-              />
+              <Badge color={item.is_published ? "green" : "red"}>
+                {item.is_published ? "Published" : "Not Published"}
+              </Badge>
             </View>
           </Pressable>
         )}
