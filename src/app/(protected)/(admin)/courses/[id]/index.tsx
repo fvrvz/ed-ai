@@ -10,6 +10,7 @@ import {
   deleteEmbeddingByDocumentId,
   getCourseById,
   getDocumentsByCourseId,
+  updateCourse,
 } from "@/utils/db";
 import { triggerVectorProcessing } from "@/utils/rag-service";
 import {
@@ -163,6 +164,34 @@ export default function CourseDetailScreen() {
     }
   }
 
+  function toggleCourse() {
+    Alert.alert(
+      "Are you sure?",
+      `Do you want to ${course?.is_published ? "unpublish" : "publish"} this course`,
+      [
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              const data = await updateCourse(id, {
+                is_published: !course?.is_published,
+              });
+              setCourse(data);
+            } catch (error) {
+              Alert.alert("Something went wrong");
+              console.log("Unable to update the course");
+            } finally {
+            }
+          },
+          isPreferred: true,
+        },
+        {
+          text: "No",
+        },
+      ],
+    );
+  }
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -205,7 +234,6 @@ export default function CourseDetailScreen() {
           flexDirection: "row",
           alignItems: "center",
           gap: 8,
-          alignSelf: "flex-end",
         }}
       >
         <TouchableOpacity
@@ -214,11 +242,35 @@ export default function CourseDetailScreen() {
             borderRadius: 8,
             borderWidth: 1,
             borderColor: "#ccc",
+            justifyContent: "center",
             flexDirection: "row",
             gap: 5,
             alignItems: "center",
-            width: "auto",
-            alignSelf: "flex-end",
+            flexGrow: 1,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          }}
+          onPress={toggleCourse}
+        >
+          <Ionicons
+            name={
+              course?.is_published ? "archive-outline" : "paper-plane-outline"
+            }
+            size={20}
+          />
+          <Text>{course?.is_published ? "Unpublish" : "Publish"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            padding: 5,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            justifyContent: "center",
+            flexDirection: "row",
+            gap: 5,
+            alignItems: "center",
+            flexGrow: 1,
             paddingHorizontal: 12,
             paddingVertical: 8,
           }}
@@ -233,17 +285,17 @@ export default function CourseDetailScreen() {
             borderRadius: 8,
             borderWidth: 1,
             borderColor: "#ccc",
+            justifyContent: "center",
             flexDirection: "row",
             gap: 5,
             alignItems: "center",
-            width: "auto",
-            alignSelf: "flex-end",
+            flexGrow: 1,
             paddingHorizontal: 12,
             paddingVertical: 8,
           }}
           onPress={() => router.push(`/courses/${id}/chat`)}
         >
-          <Ionicons name="chatbubble-outline" size={20} />
+          <Ionicons name="chatbubbles-outline" size={20} />
           <Text>Chat</Text>
         </TouchableOpacity>
       </View>
@@ -316,6 +368,11 @@ export default function CourseDetailScreen() {
                   justifyContent: "space-between",
                 }}
               >
+                <Ionicons
+                  name="cloud-done-outline"
+                  size={20}
+                  color={colors.success}
+                />
                 <View>
                   <Text style={{ fontSize: 18, fontWeight: "bold" }}>
                     {item.name}
