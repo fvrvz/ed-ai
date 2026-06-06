@@ -1,12 +1,13 @@
 import Title from "@/components/Title";
-import { globalStyles } from "@/styles/global";
+import { colors, globalStyles } from "@/styles/global";
 import { Assignment } from "@/types/course";
 import { getAssignments } from "@/utils/db";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
 export default function AssignmentsScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -38,7 +39,21 @@ export default function AssignmentsScreen() {
     <View style={globalStyles.container}>
       <Title>Assignments</Title>
 
-      <Text>Create assignment</Text>
+      <TouchableOpacity
+        onPress={() => router.push(`/courses/${id}/assignments/new`)}
+        style={{
+          backgroundColor: colors.primary,
+          borderRadius: 12,
+          padding: 10,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+          Create assignment
+        </Text>
+      </TouchableOpacity>
 
       <View>
         <FlatList

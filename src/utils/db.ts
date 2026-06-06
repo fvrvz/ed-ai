@@ -6,6 +6,7 @@ import { Assignment, AssignmentWithCourse, Course } from "@/types/course";
 import { Discussion, DiscussionMessage } from "@/types/discussion";
 import { Document, DocumentChunk } from "@/types/document";
 import { SystemSettings } from "@/types/system-settings";
+import { UserGroup } from "@/types/user";
 import { supabase } from "./supabase";
 
 interface FilterOptions<T> {
@@ -684,4 +685,28 @@ export async function deleteDiscussionMessage(
     if (error) {
         throw new Error(`Error deleting discussion message: ${error.message}`);
     }
+}
+
+export async function getUserGroups(
+    options?: Partial<UserGroup>,
+): Promise<UserGroup[]> {
+    const query = supabase.from("user_groups").select("*").order("created_at", {
+        ascending: false,
+    });
+
+    if (options?.client_id) {
+        query.eq<keyof UserGroup>("client_id", options.client_id);
+    }
+
+    if (options?.id) {
+        query.eq<keyof UserGroup>("id", options.id);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        throw new Error(`Error fetching groups, message: ${error.message}`);
+    }
+
+    return data;
 }
