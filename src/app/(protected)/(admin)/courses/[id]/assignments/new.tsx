@@ -1,19 +1,19 @@
 import LabeledRow from "@/components/ui/LabeledRow";
 import { useAuth } from "@/hooks/useAuth";
+import { AssigmentSchema, assignmentSchema } from "@/schema/assigments.schema";
+import { colors } from "@/styles/global";
 import { Profile } from "@/types/auth";
-import { Base } from "@/types/base";
-import { Assignment } from "@/types/course";
 import { UserGroup } from "@/types/user";
 import { getUserGroups, getUsers } from "@/utils/db";
 import { getFullName } from "@/utils/profile.helper";
 import { Button, FieldGroup, Host, Picker, Row, Spacer, Text } from "@expo/ui";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, View } from "react-native";
+import { Controller, useForm } from "react-hook-form";
+import { ActivityIndicator, View } from "react-native";
 
-type FormData = Omit<Assignment, keyof Base>;
-
-const intialData: FormData = {
+const intialData: AssigmentSchema = {
   course_id: "",
   user_id: "",
   group_id: "",
@@ -22,7 +22,15 @@ const intialData: FormData = {
 
 export default function CreateAssignmentScreen() {
   const { profile } = useAuth();
-  const [form, setForm] = useState<FormData>(intialData);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(assignmentSchema),
+    defaultValues: intialData,
+  });
+
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,22 +67,11 @@ export default function CreateAssignmentScreen() {
     }, [profile]),
   );
 
-  function validate() {
-    if (
-      Object.keys(form)
-        .filter((key) => key !== "group_id")
-        .every((key) => !form[key as keyof FormData])
-    ) {
-      Alert.alert("Fill the form first");
-      return;
-    }
-  }
-
-  async function handleSubmit() {
-    validate();
+  async function onSubmit(data: AssigmentSchema) {
     setLoading(true);
 
     try {
+      console.log(data);
     } catch (error) {
     } finally {
       setLoading(false);
@@ -93,55 +90,72 @@ export default function CreateAssignmentScreen() {
       <FieldGroup>
         <FieldGroup.Section title="Form">
           <LabeledRow label="User">
-            <Picker
-              selectedValue={form.user_id}
-              onValueChange={(userId) =>
-                setForm((form) => ({ ...form, user_id: userId }))
-              }
-            >
-              <Picker.Item label="Select" value={""} />
-              {users.map((user) => (
-                <Picker.Item
-                  label={getFullName(user)}
-                  value={user.id}
-                  key={user.id}
-                />
-              ))}
-            </Picker>
+            <Controller
+              control={control}
+              name="user_id"
+              render={({ field: { onChange, value } }) => (
+                <Picker selectedValue={value} onValueChange={onChange}>
+                  <Picker.Item label="Select" value={""} />
+                  {users.map((user) => (
+                    <Picker.Item
+                      label={getFullName(user)}
+                      value={user.id}
+                      key={user.id}
+                    />
+                  ))}
+                </Picker>
+              )}
+            />
           </LabeledRow>
-          <FieldGroup.SectionFooter>
-            <Text textStyle={{ fontSize: 13, color: "#6c6c70" }}>
-              Notification previews can expose sensitive content on the lock
-              screen.
-            </Text>
-          </FieldGroup.SectionFooter>
+          {errors.user_id && (
+            <FieldGroup.SectionFooter>
+              <Text textStyle={{ fontSize: 13, color: colors.error }}>
+                {errors.user_id.message}
+              </Text>
+            </FieldGroup.SectionFooter>
+          )}
         </FieldGroup.Section>
 
         <FieldGroup.Section title="Group">
           <LabeledRow label="Group">
-            <Picker
-              selectedValue={form.group_id}
-              onValueChange={(groupId) =>
-                setForm((form) => ({ ...form, group_id: groupId }))
-              }
-              enabled={groups.length > 0}
-            >
-              <Picker.Item label="Select" value="" />
-              {groups.map((group) => (
-                <Picker.Item
-                  label={group.name}
-                  value={group.id}
-                  key={group.id}
-                />
-              ))}
-            </Picker>
+            <Controller
+              control={control}
+              name="group_id"
+              render={({ field: { value, onChange } }) => (
+                <Picker
+                  selectedValue={value}
+                  onValueChange={onChange}
+                  enabled={groups.length > 0}
+                >
+                  <Picker.Item label="Select" value="" />
+                  {groups.map((group) => (
+                    <Picker.Item
+                      label={group.name}
+                      value={group.id}
+                      key={group.id}
+                    />
+                  ))}
+                </Picker>
+              )}
+            />
           </LabeledRow>
+          {errors.group_id && (
+            <FieldGroup.SectionFooter>
+              <Text textStyle={{ fontSize: 13, color: colors.error }}>
+                {errors.group_id.message}
+              </Text>
+            </FieldGroup.SectionFooter>
+          )}
         </FieldGroup.Section>
 
         <FieldGroup.Section>
           <Row alignment="center" style={{ padding: 12 }}>
             <Spacer flexible />
-            <Button variant="outlined" onPress={handleSubmit} label="Submit" />
+            <Button
+              variant="outlined"
+              onPress={handleSubmit(onSubmit)}
+              label="Submit"
+            />
             <Spacer flexible />
           </Row>
         </FieldGroup.Section>
